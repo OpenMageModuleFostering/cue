@@ -10,7 +10,7 @@
             <show_in_website>1</show_in_website>
             <show_in_store>1</show_in_store>
             <groups>
-                <environment translate="label">
+                <!--<environment translate="label">
                     <label>Environment</label>
                     <frontend_type>text</frontend_type>
                     <sort_order>1</sort_order>
@@ -27,7 +27,7 @@
                             <sort_order>3</sort_order>
                         </env>
                     </fields>
-                </environment>
+                </environment> -->
                 <credentials translate="label">
                     <label>Cue Credentials</label>
                     <comment><![CDATA[<p>Click <a href="https://business.cueconnect.com/partner/register?plan=build" target="_BLANK">HERE</a>  to create your Cue account and find your API Key under the "Code Implementation" section on your Merchant Hub Panel.</p> ]]></comment>
