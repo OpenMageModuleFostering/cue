@@ -204,6 +204,17 @@
                 </observers>
             </catalog_product_save_after>
         </events>
+        <menu>
+            <catalog>
+                <children>
+                    <cueconnect translate="title" module="cueconnect">
+                        <title>CueConnect</title>
+                        <action>cueconnect/adminhtml_sync/index</action>
+                        <sort_order>200</sort_order>
+                    </cueconnect>
+                </children>
+            </catalog>
+        </menu>
     </adminhtml>
     <default>
         <cueconnect>
@@ -256,4 +267,24 @@
             </webhook>
         </cueconnect>
     </default>
+    <crontab>
+        <jobs>
+            <cueconnect_dailyExport>
+                <schedule>
+                    <cron_expr>0 0 * * *</cron_expr>
+                </schedule>
+                <run>
+                    <model>cueconnect/cueconnect::dailyExport</model>
+                </run>
+            </cueconnect_dailyExport>
+            <cueconnect_manualExport>
+                <schedule>
+                    <cron_expr>* * * * *</cron_expr>
+                </schedule>
+                <run>
+                    <model>cueconnect/cueconnect::manualExport</model>
+                </run>
+            </cueconnect_manualExport>
+        </jobs>
+    </crontab>
 </config>
