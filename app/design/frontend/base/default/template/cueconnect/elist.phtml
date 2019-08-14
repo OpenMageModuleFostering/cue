@@ -4,7 +4,7 @@ if (($this->getMode() == 2) && $this->getRetailerId() && $this->isEnabled()) :
 	// signed in so show elist
 	if ($this->getCustomerEmail()):
 ?>
-<iframe id="streamIFrame" name="streamIFrame" src="https://qa-www.cueconnect.net/poweredby/<?php echo $this->getRetailerId() ?>/?origin=<?php echo Mage::getBaseUrl(); ?>&amp;version=embed&amp;from=stream&amp;email=<?php echo $this->getCustomerEmail() ?>" height="640px" width="100%" scrolling="no"></iframe>
+<iframe id="streamIFrame" name="streamIFrame" src="https://www.cueconnect.com/poweredby/<?php echo $this->getRetailerId() ?>/?origin=<?php echo Mage::getBaseUrl(); ?>&amp;version=embed&amp;from=stream&amp;email=<?php echo $this->getCustomerEmail() ?>" height="640px" width="100%" scrolling="no"></iframe>
 <?php 
 	// show prelogin
 	else:
