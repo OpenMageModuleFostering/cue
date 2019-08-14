@@ -1,18 +1,23 @@
 <?php
 // CP
-if (($this->getMode() == 2) && $this->getRetailerId() && $this->isEnabled()) : 
+if ($this->getRetailerId() && $this->isEnabled()) : 
     
     $place_id = $this->getRetailerId() ? $this->getRetailerId() : 0;
     $origin = Mage::getBaseUrl();
 
     if ($this->getCustomerEmail()):
 	// signed in so show my-list
+    $base_url = "https://www.cueconnect.com";   
+    if($this->getEnv() && $this->getEnv() != ''){
+        $base_url = "https://".$this->getEnv()."-www.cueconnect.net";
+    }
+
 ?>
 
 <iframe 
     id="streamIFrame" 
     name="streamIFrame" 
-    src="https://www.cueconnect.com/poweredby/<?php echo $place_id ?>/?origin=<?php echo $origin; ?>&amp;version=embed&amp;from=stream&amp;email=<?php echo $this->getCustomerEmail() ?>" 
+    src="<?php echo $base_url; ?>/poweredby/<?php echo $place_id ?>/?origin=<?php echo $origin; ?>&amp;version=embed&amp;from=stream&amp;email=<?php echo $this->getCustomerEmail() ?>" 
     height="640px" 
     width="100%" 
     scrolling="no" 

@@ -21,278 +21,222 @@ class CueConnect_Cue_Model_Observer
 
     const SYNC_MASS_ACTION_NAME = 'cue_sync_mass_action';
 
+    /**
+     * Current Store Id
+     *
+     * @var string $_currentStoreId
+     */
     protected $_currentStoreId = false;
 
     /**
-     * accessing e-List - used to sync saved items to Cue if not already done
+     * Current Store Name
+     *
+     * @var string $_currentStoreName
+     */
+    protected $_currentStoreName = false;
+
+    /**
+     * Errors messages
+     *
+     * @var array $_errors
+     */
+    protected $_errors = array();
+
+
+
+    /**########################################################################################################################
+     *
+     * List of Function for > CUE Configuration
+     *
+     * ########################################################################################################################
+     */
+
+
+    /**
+     * @action : Cue tools Status Sycn (Magento -> Cue)
+     * @description : Sync tools status "enabled/disabled" with Cue
+     * @author : Imad.T - itouil@cueconnect.com
      * @param  Varien_Event_Observer $observer
      */
-    public function viewElist(Varien_Event_Observer $observer) {
-        if (Mage::getSingleton('customer/session')->isLoggedIn()) { 
-            $event = $observer->getEvent();
-            $customer = $event->getCustomer();
-
-            if ($customer) {
-                $wishList = Mage::getModel('wishlist/wishlist')->loadByCustomer($customer);
-
-                if ($wishList) {
-                    $wishListItemCollection = $wishList->getItemCollection();
-
-                    if (count($wishListItemCollection)) {
-                        foreach ($wishListItemCollection as $item) {
-                            $this->syncMark($item->getProduct(), $item->getDescription(), $customer);
-                        }
-                    }    
-                }
-            }
-        }
-    }
-
-
-    /**
-     * Add e-List to menu
-     * @param  Varien_Event_Observer $observer
-     
-    public function regenerateMenu(Varien_Event_Observer $observer) {
-        // if module is active
-        if (!Mage::getStoreConfig('advanced/modules_disable_output/CueConnect_Cue')) {
-            $layout = Mage::getSingleton('core/layout');
-
-            // remove all the blocks you don't want
-            //$layout->getUpdate()->addUpdate('<remove name="catalog.topnav"/>');
-
-            // load layout updates by specified handles
-            $layout->getUpdate()->load();
-
-            // generate xml from collected text updates
-            $layout->generateXml();
-
-            // generate blocks from xml layout
-            $layout->generateBlocks();
-        }
-    }*/
-    
-
-
-    /**
-     * sync customer account with Cue account after login
-     * @param  Varien_Event_Observer $observer
-     */
-    public function customerLogin(Varien_Event_Observer $observer) { 
-        if (Mage::getSingleton('customer/session')->isLoggedIn()) { 
-            $event = $observer->getEvent();
-            $customer = $event->getCustomer();
-
-            if ($customer) {
-                $this->syncCustomer($customer);
-            }
-        }
-    }
-
-
-    /**
-     * sync magento customer profile with cue user (Magento -> Cue)
-     * @param  Varien_Event_Observer $observer 
-     */
-    public function customerSaveProfile(Varien_Event_Observer $observer) {
-        $event = $observer->getEvent();
-        $customer = $event->getCustomer();
-        
-        if ($customer) {
-            $this->syncCustomer($customer);
-        }
-    }
-
-
-    /**
-     * sync product data with e-List product (Magento -> Cue)
-     * @param  Varien_Event_Observer $observer [description]
-     */
-    public function updateProduct(Varien_Event_Observer $observer)
+    public function ConfigUpdated(Varien_Event_Observer $observer)
     {
-        // Get catalog product
-        $catalog_product = $observer->getEvent()->getProduct();
-        
-        // For each related stores
-        foreach ($catalog_product->getStoreIds() as $store_id) {
-            // Get store
-            $store = Mage::getModel('core/store')->load($store_id);
-            if ($store->getConfig('cueconnect/enabled/enabled')) {
-                $cueLogin = $store->getConfig('cueconnect/credentials/login');
-                $cuePassword = $store->getConfig('cueconnect/credentials/password');
-                if (!$cueLogin || !$cuePassword) {
-                    $message = Mage::helper('cueconnect')->__(
-                        'Please check the following Cue API Credentials: E-mail and Password for the %s store.',
-                        $store->getName()
-                    );
-                    Mage::getSingleton('adminhtml/session')->addError($message);
-                    continue;
-                }
-                // Retailuser SOAP client
-                $soap_client = Mage::helper('cueconnect')->getSoapClient(
-                        Mage::helper('cueconnect')->getWsUrl('retailuser'),
-                        $store->getConfig('cueconnect/credentials/login'),
-                        $store->getConfig('cueconnect/credentials/password')
-                );
 
-                // Get place ID
-                $place_id =  null;
-                try {
-                    $result = $soap_client->get(array(
-                        'email' => $store->getConfig('cueconnect/credentials/login')
-                    ));
-                    $place_id = $result->data->id;
-                }
-                catch (Exception $e) {
-                    Mage::log($e->getMessage());
-                    $message = Mage::helper('cueconnect')->__(
-                        'An error occurred while synchronization product data with Cueconnect for the %s store.
-                            You can find more details in the log file',
-                        $store->getName()
-                    );
-                    Mage::getSingleton('adminhtml/session')->addError($message);
-                }
-
-                if ($place_id) {
-                    // Product SOAP client
-                    $soap_client = Mage::helper('cueconnect')->getSoapClient(
-                        Mage::helper('cueconnect')->getWsUrl('product'),
-                        $store->getConfig('cueconnect/credentials/login'),
-                        $store->getConfig('cueconnect/credentials/password')
-                    );
-
-                    // Product icon
-                    $icon = "http://www.cueconnect.com/images/no_image.gif";
-                    if ($catalog_product->getData('image')) {
-                        $icon = $catalog_product->getMediaConfig()->getMediaUrl($catalog_product->getData('image'));
-                    }
-
-                    // Get product and update/create product
-                    try {
-                        $result = $soap_client->get(array(
-                            'place_id' => $place_id,
-                            'sku' => $catalog_product->getSku(),
-                            'page' => 1,
-                            'page_size' => 1
-                        ));
-                        if ($result && isset($result->data) && isset($result->data[0]) && isset($result->inpagecount) && $result->inpagecount) {
-                            $cueconnect_product = $result->data[0];
-                            $data = array(
-                                'product_imic' => null,
-                                'sku' => $catalog_product->getSku(),
-                                'name' => $catalog_product->getName(),
-                                'description' => $catalog_product->getDescription(),
-                                'sms_name' => $catalog_product->getName(),
-                                'sms_desc' => $catalog_product->getDescription(),
-                                'url' => $catalog_product->getProductUrl(),
-                                'taxonomy_id' => Mage::getStoreConfig('cueconnect/taxomomy_id'),
-                                'icon' => $icon,
-                                'live' => '1',
-                                'price' => $catalog_product->getPrice()
-                            );
-                            $soap_client->set(array(
-                                'place_id' => $place_id,
-                                'data' => array(0 => $data),
-                                'count' => 1
-                            ));
-                        }
-                        else {
-                            $data = array(
-                                'sku' => $catalog_product->getSku(),
-                                'upc' => uniqid(),
-                                'name' => $catalog_product->getName(),
-                                'description' => $catalog_product->getDescription(),
-                                'sms_name' => $catalog_product->getName(),
-                                'sms_desc' => $catalog_product->getDescription(),
-                                'url' => $catalog_product->getProductUrl(),
-                                'taxonomy_id' => Mage::getStoreConfig('cueconnect/taxomomy_id'),
-                                'icon' => $icon,
-                                'live' => '1',
-                                'price' => $catalog_product->getPrice()
-                            );
-                            $soap_client->create(array(
-                                'place_id' => $place_id,
-                                'data' => array(0 => $data),
-                                'count' => 1
-                            ));
-                        }
-                    }
-                    catch (Exception $e) {
-                        Mage::log($e->getMessage());
-                        $message = Mage::helper('cueconnect')->__(
-                            'An error occurred while synchronization product data with Cueconnect for the %s store.
-                            You can find more details in the log file',
-                            $store->getName()
-                        );
-                        Mage::getSingleton('adminhtml/session')->addError($message);
-                    }
-                }
-            }
-        }
-    }
-    
-    /**
-     * update config in Cue when updated in Magento (Magento -> Cue)
-     * @param  Varien_Event_Observer $observer
-     */
-    public function adminCueConnectUpdated(Varien_Event_Observer $observer)
-    {
-        $storeId = $observer->getEvent()->getStore();
+        $storeId = Mage::app()
+            ->getWebsite(true)
+            ->getDefaultGroup()
+            ->getDefaultStoreId();
         $store = Mage::getModel('core/store')->load($storeId);
+
         if ($store) {
+
             $post = Mage::app()->getRequest()->getPost();
-            $version = $post['groups']['mode']['fields']['mode']['value'];
+            $params['showMyList'] = $post['groups']['collection']['fields']['enabled']['value'];
+            $params['showShareButton'] = $post['groups']['ob']['fields']['enabled']['value'];
+            $params['showAddToWishlist'] = $post['groups']['favorite']['fields']['enabled']['value'];
+            $params['showPriceAlert'] = $post['groups']['alert']['fields']['enabled']['value'];
+            $params['showTracking'] = $post['groups']['tracking']['fields']['enabled']['inherit'];
+            $params['version'] =2;
 
             $placeApiKey = $store->getConfig('cueconnect/credentials/api_key');
-            $str = "v$version" . Mage::helper('cueconnect')->getWebhookSelectVersionKey() . Mage::helper('cueconnect')->getWebhookSelectVersionUrl() . $placeApiKey;
+            $str = "v2" . Mage::helper('cueconnect')->getWebhookConfigurationChangedKey() . Mage::helper('cueconnect')->getWebhookConfigurationChangedUrl() . $placeApiKey;
             $key = sha1($str) . '$' . $placeApiKey;
-            
-            $params = array(
-                'version' => $version
-            );
 
-            $retailerId = (int)$this->doRequest(Mage::helper('cueconnect')->getWebhookSelectVersionUrl(), $key, $params);
-            
-            if ($retailerId) {
-                /*$config = new Mage_Core_Model_Config();
-                $config->saveConfig('cueconnect/credentials/retailer_id', $retailerId, 'default', 1);
-                Mage::app()->getCacheInstance()->cleanType('config');
-                */
+            // Submit config changes to Cue
+            $result = $this->_doRequest(Mage::helper('cueconnect')->getWebhookConfigurationChangedUrl(), $key, $params);
+            $soap_auth = Mage::helper('cueconnect')->getRetailer($store);
+            $retailerId = (int)$result;
+            // Check if API Key is valid
+            if($result === "0"){
+                // Say API key is wrong to the admin
+                $message = Mage::helper('cueconnect')->__(
+                    'Cue Authentication Failure : Incorrect API Key. Find your API Key by visiting www.cueconnect.com > Login > Code Implementation.',
+                    $store->getName()
+                );
+                Mage::getSingleton('adminhtml/session')->addError($message);
+            }
+            elseif(!$soap_auth){
+                // Say SOAP Credentials are wrong to the admin
+                $message = Mage::helper('cueconnect')->__(
+                    'Cue Authentication Failure : Incorrect email or password. You can reset your password by visiting www.cueconnect.com > Forgot password',
+                    $store->getName()
+                );
+                Mage::getSingleton('adminhtml/session')->addError($message);
+            }
+            elseif ($retailerId) {
                 Mage::getModel('core/config')->saveConfig('cueconnect/credentials/retailer_id', $retailerId);
                 Mage::app()->getCacheInstance()->cleanType('config');
             }
+
         }
     }
 
     /**
-     * update product in Cue when updated in Magento (Magento -> Cue)
-     * @param  Varien_Event_Observer $observer
+     * @action : Cue tools Status Sycn (Magento -> Cue)
+     * @description : Check if Remote Sync Needed From Cue
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param  $action (products or customers)
+     * @return bool
      */
-    public function adminProductUpdated(Varien_Event_Observer $observer)
-    {       
-        $product = $observer->getEvent()->getProduct();
+    public function getRemoteSyncStatus($action = "products")
+    {
+        $storeId = Mage::app()
+            ->getWebsite(true)
+            ->getDefaultGroup()
+            ->getDefaultStoreId();
+        $store = Mage::getModel('core/store')->load($storeId);
 
-        if (Mage::registry('old_product_sku')) {
-            $this->deleteOldSkuProduct($product->getStoreIds(), Mage::registry('old_product_sku'));
-            Mage::unregister('old_product_sku');
-        }
-        // For each related stores
-        foreach ($product->getStoreIds() as $storeId) {
-            $store = Mage::getModel('core/store')->load($storeId);
+        if($store){
+
+            $params['version'] =2;
+            $params['sync_type'] = $action;
+            $params['remote_sync_check'] = true;
+
             $placeApiKey = $store->getConfig('cueconnect/credentials/api_key');
-
-            $str = $product->getSku() . Mage::helper('cueconnect')->getWebhookPriceChangedKey() . Mage::helper('cueconnect')->getWebhookPriceChangedUrl() . $product->getId();
-
+            $str = "v2" . Mage::helper('cueconnect')->getWebhookConfigurationChangedKey() . Mage::helper('cueconnect')->getWebhookConfigurationChangedUrl() . $placeApiKey;
             $key = sha1($str) . '$' . $placeApiKey;
 
+            // Submit config changes to Cue
+
+            $result = $this->_doRequest(Mage::helper('cueconnect')->getWebhookConfigurationChangedUrl(), $key, $params);
+
+            if($result === "enabled") return true;
+            return false;
+        }
+
+    }
+
+
+    /**########################################################################################################################
+     *
+     * List of Function for > PRODUCT / MARK Synchronization with CUE
+     *
+     * ########################################################################################################################
+     */
+
+
+    /**
+     * @action : Individual product
+     * @description : Checked updated product SKU Before the event
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param Varien_Event_Observer $observer
+     */
+    public function productSkuChanges($observer)
+    {
+        $product = $observer->getEvent()->getProduct();
+
+        if ($product->hasDataChanges()) {
+            try {
+                /* @var string $newSku */
+                $newSku = ($product->getData('sku')) ? $product->getData('sku') : null;
+                /* @var string $oldSku */
+                $oldSku = ($product->getOrigData('sku')) ? $product->getOrigData('sku') : null;
+
+                if ($newSku && $oldSku && ($newSku != $oldSku)) {
+                    Mage::register('old_product_sku', $oldSku);
+                }
+            } catch (Exception $e) {
+                Mage::log($e->getTraceAsString(), null, 'product_changes_fault.log');
+            }
+        }
+    }
+
+    /**
+     * @action : Multiple product
+     * @description : Sync updated products data with CUE on bulk product's attributes update (Magento -> Cue)
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param Varien_Event_Observer $observer
+     * @return $this
+     * @support enabled
+     */
+    public function productMassUpdate(Varien_Event_Observer $observer)
+    {
+
+        $productIds = $observer->getProductIds();
+        $attributesData = $observer->getAttributesData();
+        $this->_syncMultipleProduct($productIds, $attributesData);
+
+    }
+
+    /**
+     * @action : Individual product
+     * @description : Update product in Cue when updated in Magento
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param  Varien_Event_Observer $observer
+     * @support enabled
+     */
+    public function productUpdated(Varien_Event_Observer $observer)
+    {
+
+        // Init vars
+        $product = $observer->getEvent()->getProduct();
+        $old_sku = null;
+
+        // Check if SKU changed, if Yes grab
+        if (Mage::registry('old_product_sku')) {
+            $old_sku = Mage::registry('old_product_sku');
+            Mage::unregister('old_product_sku');
+        }
+        
+        // Get Store and its API Key
+        $storeids = $product->getStoreIds();
+        $store = Mage::getModel('core/store')->load($storeids[0]);
+        $placeApiKey = $store->getConfig('cueconnect/credentials/api_key');
+
+        if($placeApiKey){
+
+            // Generate the Auth Key
+            $str = $product->getSku() . Mage::helper('cueconnect')->getWebhookProductChangedKey() . Mage::helper('cueconnect')->getWebhookProductChangedUrl() . $product->getId();
+            $key = sha1($str) . '$' . $placeApiKey;
+
+            // Generate Image data
             $width = Mage::getStoreConfig('cueconnect/image/width');
             $height = Mage::getStoreConfig('cueconnect/image/height');
-
             $image = 'https://www.cueconnect.com/images/no_image.gif';
             if ($product->getData('small_image') && $product->getData('small_image') !== 'no_selection') {
                 $image = (string)Mage::helper('catalog/image')->init($product, 'small_image')->resize($width, $height);
             }
 
+            // Format Product Data
             $params = array(
                 'id'                    => $product->getId(),
                 'sku'                   => (string)$product->getSku(),
@@ -308,91 +252,300 @@ class CueConnect_Cue_Model_Observer
                 'price'                 => number_format(Mage::helper('core')->currency($product->getPrice(), false, false), 2),
             );
 
-            $url = Mage::helper('cueconnect')->getWebhookPriceChangedUrl();
+            if($old_sku) $params['old_sku'] = $old_sku;
 
-            $this->doRequest($url, $key, $params);
+            // Get Cue WebHook URL
+            $url = Mage::helper('cueconnect')->getWebhookProductChangedUrl();
+            // Make request
+            $this->_doRequest($url, $key, $params);
+
+        }else{
+            // Say API key is wrong to the admin
+            $message = Mage::helper('cueconnect')->__(
+                'Cue Connect authentication issue :: Go to System > Configuration > Under Catalog select Cue Connect, and set/verify your Cue credentials ',
+                $store->getName()
+            );
+            Mage::getSingleton('adminhtml/session')->addError($message);
+
+            // Send support request to Cue Support team
+            $cueModel = Mage::getModel('cueconnect/cueconnect');
+            $cueModel->sendEmailToSupport(
+                "Observer > productUpdated()",
+                $store->getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB),
+                $store->getName(),
+                Mage::getStoreConfig('cueconnect/credentials/retailer_id'),
+                Mage::getStoreConfig('cueconnect/credentials/login', $store->getId()),
+                "<br/>Debug<br/>placeApiKey Not defined"
+            );
         }
+
+
     }
 
-
     /**
-     * delete product from e-List when deleted in Magento (Magento -> Cue)
+     * @action : Individual product
+     * @description : delete product from e-List when deleted in Magento (Magento -> Cue)
+     * @author : Imad.T - itouil@cueconnect.com
      * @param  Varien_Event_Observer $observer
      */
     public function deleteProduct(Varien_Event_Observer $observer)
     {
         // Get catalog product
-        $catalog_product = $observer->getEvent()->getProduct();
+        $product = $observer->getEvent()->getProduct();
 
         // For each related stores
-        foreach ($catalog_product->getStoreIds() as $store_id) {
-            // Get store
-            $store = Mage::getModel('core/store')->load($store_id);
-            if ($store->getConfig('cueconnect/enabled/enabled')) {
-                // Retailuser SOAP client
-                $soap_client = Mage::helper('cueconnect')->getSoapClient(
-                    Mage::helper('cueconnect')->getWsUrl('retailuser'),
-                    $store->getConfig('cueconnect/credentials/login'),
-                    $store->getConfig('cueconnect/credentials/password')
-                );
+        $storeids = $product->getStoreIds();
+        // Get store
+        $store = Mage::getModel('core/store')->load($storeids[0]);
 
-                // Get place ID
-                $place_id =  null;
-                try {
-                    $result = $soap_client->get(array(
-                        'email' => $store->getConfig('cueconnect/credentials/login')
-                    ));
-                    $place_id = $result->data->id;
-                }
-                catch (Exception $e) {
-                    Mage::log($e->getMessage());
-                }
+        if($store->getConfig('cueconnect/enabled/enabled')){
 
-                // Product SOAP client
-                $soap_client = Mage::helper('cueconnect')->getSoapClient(
-                    Mage::helper('cueconnect')->getWsUrl('product'),
-                    $store->getConfig('cueconnect/credentials/login'),
-                    $store->getConfig('cueconnect/credentials/password')
-                );
+            $placeApiKey = $store->getConfig('cueconnect/credentials/api_key');
+            $str = $product->getSku() . Mage::helper('cueconnect')->getWebhookProductDeletedKey() . Mage::helper('cueconnect')->getWebhookProductDeletedUrl() . $product->getId();
+            $key = sha1($str) . '$' . $placeApiKey;
 
-                // Get and delete Cue Connect product
-                try {
-                    $result = $soap_client->get(array(
-                        'place_id' => $place_id,
-                        'sku' => $catalog_product->getSku(),
-                        'page' => 1,
-                        'page_size' => 1
-                    ));
-                    if ($result && isset($result->data) && isset($result->data[0]) && isset($result->inpagecount) && $result->inpagecount) {
-                        $cueconnect_product = $result->data[0];
-                        $result = $soap_client->delete(array(
-                            'place_id' => $place_id,
-                            'data' => array($cueconnect_product->product_imic),
-                            'count' => 1
-                        ));
+            $params = array(
+                'id'  => $product->getId(),
+                'sku' => (string)$product->getSku()
+            );
+
+            $url = Mage::helper('cueconnect')->getWebhookProductDeletedUrl();
+            $this->_doRequest($url, $key, $params);
+
+        }
+
+    }
+
+    /**
+     * @action : Multiple product
+     * @description : Sync imported products data with CUE (Magento -> Cue)
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param  Varien_Event_Observer $observer
+     * @support enabled
+     */
+    public function productsImportUpdate(Varien_Event_Observer $observer)
+    {
+        $adapter = $observer->getEvent()->getAdapter();
+        $productIds = $adapter->getAffectedEntityIds();
+        $this->_syncMultipleProduct($productIds);
+
+    }
+
+    /**
+     * @action : Multiple products
+     * @description : Sync updated products data with CUE
+     * @author : Imad.T - itouil@cueconnect.com
+     * @support enabled
+     */
+    protected function _syncMultipleProduct($productIds, $attributesData = null){
+
+        if (count($productIds)) {
+
+            $productUpdateModel = Mage::getModel('cueconnect/cueconnect');
+            $productCollection = $productUpdateModel->getProductsByIds($productIds);
+
+            foreach ($productCollection as $product) {
+
+                // Get Store and its API Key
+                $storeids = $product->getStoreIds();
+                $store = Mage::getModel('core/store')->load($storeids[0]);
+                $placeApiKey = $store->getConfig('cueconnect/credentials/api_key');
+
+                if($placeApiKey){
+
+                    // Generate the Auth Key
+                    $str = $product->getSku() . Mage::helper('cueconnect')->getWebhookProductChangedKey() . Mage::helper('cueconnect')->getWebhookProductChangedUrl() . $product->getId();
+                    $key = sha1($str) . '$' . $placeApiKey;
+
+                    // Generate Image data
+                    $width = Mage::getStoreConfig('cueconnect/image/width');
+                    $height = Mage::getStoreConfig('cueconnect/image/height');
+                    $image = 'https://www.cueconnect.com/images/no_image.gif';
+                    if ($product->getData('small_image') && $product->getData('small_image') !== 'no_selection') {
+                        $image = (string)Mage::helper('catalog/image')->init($product, 'small_image')->resize($width, $height);
                     }
-                }
-                catch (Exception $e) {
-                    Mage::log($e->getMessage());
+
+                    // Format Product Data
+                    $params = array(
+                        'id'                    => $product->getId(),
+                        'sku'                   => (string)$product->getSku(),
+                        'name'                  => $product->getName(),
+                        'description'           => (string)$product->getDescription(),
+                        'brand'                 => (string)$product->getAttributeText('manufacturer'),
+                        'upc'                   => uniqid(),
+                        'sms_name'              => $product->getName(),
+                        'sms_desc'              => (string)$product->getDescription(),
+                        'url'                   => $product->getProductUrl(),
+                        'taxonomy_id'           => Mage::getStoreConfig('cueconnect/taxomomy_id'),
+                        'image'                 => $image,
+                        'price'                 => number_format(Mage::helper('core')->currency($product->getPrice(), false, false), 2),
+                    );
+
+                    // Append new data if exist
+                    if($attributesData){
+                        foreach ($attributesData as $att_key => $att_value){
+                            $params[$att_key] = $att_value;
+                        }
+                    }
+
+
+                    // Get Cue WebHook URL
+                    $url = Mage::helper('cueconnect')->getWebhookProductChangedUrl();
+
+                    // Make request
+                    $this->_doRequest($url, $key, $params);
+
+                }else{
+                    // Say API key is wrong to the admin
                     $message = Mage::helper('cueconnect')->__(
-                        'An error occurred while synchronization product data with Cueconnect for the %s store.
-                            You can find more details in the log file',
+                        'Cue Connect authentication issue :: Go to System > Configuration > Under Catalog select Cue Connect, and set/verify your Cue credentials ',
                         $store->getName()
                     );
                     Mage::getSingleton('adminhtml/session')->addError($message);
+
+                    // Send support request to Cue Support team
+                    $cueModel = Mage::getModel('cueconnect/cueconnect');
+                    $cueModel->sendEmailToSupport(
+                        "Observer > _syncMultipleProduct()",
+                        $store->getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB),
+                        $store->getName(),
+                        Mage::getStoreConfig('cueconnect/credentials/retailer_id'),
+                        Mage::getStoreConfig('cueconnect/credentials/login', $store->getId()),
+                        "<br/>Debug<br/>placeApiKey Not defined"
+                    );
                 }
+
             }
+
         }
+
     }
 
 
+    /**########################################################################################################################
+     *
+     * List of Function for > CUSTOMER Synchronization with CUE
+     *
+     * ########################################################################################################################
+     */
+
     /**
-     * sync function
+     *
+     * @action : Multiple customers
+     * @description : Sync all customers with CUE
+     * @author : Imad.T - itouil@cueconnect.com
+     * @support enabled
+     * @return bool
+     */
+    public function syncAllCustomers()
+    {
+
+        $notSyncPrev = $this->checkNotSyncedCustomer();
+        $storeCollection = Mage::getModel('core/store')->getCollection()->setLoadDefault(true);
+
+        foreach ($storeCollection as $store) {
+            $this->_currentStoreId = $store->getId();
+            $this->_currentStoreName = $store->getName();
+
+            // return sync status for current store
+            $status = $this->_getCustomerSyncStatus($store);
+
+            // skip if customers sync for current store complete
+            if ($status == self::CUSTOMER_SYNC_COMPLETE) {
+                continue;
+            }
+
+            // Skip all if customer sync is processing
+            if ($status == self::CUSTOMER_SYNC_PROCESSING) {
+                return false;
+            }
+
+            // set $status processing for current store
+            $this->setCustomersSyncStatus(self::CUSTOMER_SYNC_PROCESSING);
+            $customerCollection = Mage::getModel('customer/customer')->getCollection()
+                ->addFieldToFilter('store_id', $this->_currentStoreId);
+            // start sync of customers with Cue
+            foreach ($customerCollection as $customer) {
+                $this->_syncCustomer($customer);
+            }
+
+            //check the cueconnect_user_sync and find the customers with status - STATUS_ERROR (2) after sync
+            $notSyncUserIds = $this->checkNotSyncedCustomer();
+
+            if (count($notSyncPrev) < count($notSyncUserIds)) {
+                $error_msg = '';
+                if (count($this->_errors)) {
+                    $error_msg = 'Errors: ' . '<br/>';
+                    $number = 1;
+                    foreach ($this->_errors as $error) {
+                        $error_msg .= $number . '. ' . $error . '<br/>';
+                        ++$number;
+                    }
+                }
+
+                // Send support request to Cue Support team
+                $cueModel = Mage::getModel('cueconnect/cueconnect');
+                $cueModel->sendEmailToSupport(
+                    "Observer > syncAllCustomers()",
+                    $store->getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB),
+                    $store->getName(),
+                    Mage::getStoreConfig('cueconnect/credentials/retailer_id'),
+                    Mage::getStoreConfig('cueconnect/credentials/login', $store->getId()),
+                    "<br/>Debug<br/>$error_msg"
+                );
+
+
+            }
+
+            $notSyncPrev = $notSyncUserIds;
+
+        }
+
+    }
+
+    /**
+     * @description : Get customer Sync status for the store.
+     * @author : Imad.T - itouil@cueconnect.com
+     * @return mixed
+     */
+    protected function _getCustomerSyncStatus($store)
+    {
+        $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $store->getId());
+        $status = $store->getConfig($path);
+
+        return $status;
+    }
+
+    /**
+     *
+     * @action : Single customers
+     * @description : flag local user as synced and create Cue user
+     * @author : Imad.T - itouil@cueconnect.com
+     * @support enabled
      * @param  Mage_Customer_Model_Customer $customer
+     * @return bool
+     */
+    protected function _syncCustomer($customer)
+    {
+
+        if ($customer) {
+            $this->createCueUser($customer);
+        }
+    }
+
+    /**
+     * @action : Single customers
+     * @description : Sync user with Cue
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param  Mage_Customer_Model_Customer $customer
+     * @return bool
      */
     protected function createCueUser($customer) {
+
         if ($customer) {
+
             $storeId = $customer->getStoreId();
+
             if  (!$storeId && $this->_currentStoreId ) {
                 $storeId = $this->_currentStoreId;
             }
@@ -423,47 +576,293 @@ class CueConnect_Cue_Model_Observer
             );
 
             $url = Mage::helper('cueconnect')->getWebhookSaveCustomerUrl();
-            $response = $this->doRequest($url, $key, $params);
-            
-            // do POST - use curl
-            /*if (function_exists('curl_version')) {
-                try {
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, $url);
-                    curl_setopt($ch, CURLOPT_HEADER);
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                    curl_setopt($ch, CURLOPT_HTTPHEADER,array('X-Cue-Mage-Auth: ' . $key));
 
-                    $response = curl_exec($ch);
-                    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);  
-                    
-                    curl_close($ch);
-                    
-                } catch (Exception $e) {
-                    Mage::log($e->getMessage());
-                }
-            }
-            // do GET
-            else {
-                $params['key'] = $key;
-                $queryString  = '?' . http_build_query($params);
-                
-                try {
-                    $response = file_get_contents($url . $queryString);
-                } catch (Exception $e) {
-                    Mage::log($e->getMessage());
-                }
-            }*/
+            $response = $this->_doRequest($url, $key, $params);
 
             return $response;
-        } 
+        }
 
         return null;
     }
 
+    /**
+     * @action : Single customers
+     * @description : check the cueconnect_user_sync and find the customers with status - STATUS_ERROR (2)
+     * @author : Imad.T - itouil@cueconnect.com
+     */
+    public function checkNotSyncedCustomer()
+    {
+        /** @var CueConnect_Cue_Model_UserSync $userSyncModel */
+        $userSyncModel = Mage::getModel('cueconnect/userSync');
+        $notSyncUserIds = array();
+        $userSyncCollection = $userSyncModel->getCollection()
+            ->addFieldToFilter('status', $userSyncModel::STATUS_ERROR);
+        foreach ($userSyncCollection->getItems() as $user) {
+            $notSyncUserIds[] = $user->getId();
+        }
 
+        return $notSyncUserIds;
+    }
+
+    /**
+     * @description : Set and save customers sync status for the store
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param string $value
+     */
+    protected function setCustomersSyncStatus($value)
+    {
+        $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $this->_currentStoreId);
+        Mage::getModel('core/config')->saveConfig($path, $value);
+        Mage::app()->getCacheInstance()->cleanType('config');
+    }
+
+    /**
+     * @description : Remove schedule customer Sync. Set flat to 0
+     * @author : Imad.T - itouil@cueconnect.com
+     */
+    public function removeScheduleCustomerSync()
+    {
+        Mage::getModel('core/config')->saveConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 0);
+        Mage::app()->getStore()->setConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 0);
+        Mage::app()->getCacheInstance()->cleanType('config');
+    }
+
+    /**
+     * @description : Schedule customer Sync. Set flat to 1
+     * @author : Imad.T - itouil@cueconnect.com
+     */
+    public function scheduleCustomerSync()
+    {
+        Mage::getModel('core/config')->saveConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 1);
+        Mage::app()->getCacheInstance()->cleanType('config');
+    }
+
+    /*### To be reviewed ###*/
+    /**
+     * Check customer sync status for the stores, return true when resync should be running.
+     * @todo: to remove with /Cue/Block/System/Config/Customerresync.php
+     * @return bool
+     */
+    public function isCustomerReSyncNeeded()
+    {
+        $scheduled = Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED);
+        if ($scheduled) {
+
+            return false;
+        }
+        $storeCollection = Mage::getModel('core/store')->getCollection()
+            ->setLoadDefault(true);
+        foreach ($storeCollection as $store) {
+            $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $store->getId());
+            $status = $store->getConfig($path);
+            if ($status == self::CUSTOMER_SYNC_PROCESSING) {
+
+                return false;
+            }
+            if ($status == self::CUSTOMER_SYNC_FAILED) {
+
+                return true;
+            }
+
+        }
+        $retailer_id = Mage::getStoreConfig('cueconnect/credentials/retailer_id');
+        if (!is_null($retailer_id)) {
+
+            $this->scheduleCustomerSync();
+        }
+
+        return false;
+    }
+
+    /**
+     * accessing e-List - used to sync saved items to Cue if not already done
+     * @param  Varien_Event_Observer $observer
+     */
+    public function viewElist(Varien_Event_Observer $observer) {
+        if (Mage::getSingleton('customer/session')->isLoggedIn()) {
+            $event = $observer->getEvent();
+            $customer = $event->getCustomer();
+
+            if ($customer) {
+                $wishList = Mage::getModel('wishlist/wishlist')->loadByCustomer($customer);
+
+                if ($wishList) {
+                    $wishListItemCollection = $wishList->getItemCollection();
+
+                    if (count($wishListItemCollection)) {
+                        foreach ($wishListItemCollection as $item) {
+                            $this->_syncMark($item->getProduct(), $item->getDescription(), $customer);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Get order ids for the multishipping checkout, add it to session
+     * @todo: to review
+     * @param Varien_Event_Observer $observer
+     */
+    public function getOrderIds(Varien_Event_Observer $observer)
+    {
+        $orderIds = $observer->getOrderIds();
+        if ($orderIds && count($orderIds)) {
+            Mage::getSingleton('checkout/session')->setFirstOrderId($orderIds[0]);
+        }
+    }
+
+    /**
+     * sync customer account with Cue account after login
+     * @param  Varien_Event_Observer $observer
+     */
+    public function customerLogin(Varien_Event_Observer $observer) {
+        if (Mage::getSingleton('customer/session')->isLoggedIn()) {
+            $event = $observer->getEvent();
+            $customer = $event->getCustomer();
+
+            if ($customer) {
+                $this->_syncCustomer($customer);
+            }
+        }
+    }
+
+    /**
+     * sync magento customer profile with cue user (Magento -> Cue)
+     * @param  Varien_Event_Observer $observer
+     */
+    public function customerSaveProfile(Varien_Event_Observer $observer) {
+        $event = $observer->getEvent();
+        $customer = $event->getCustomer();
+
+        if ($customer) {
+            $this->_syncCustomer($customer);
+        }
+    }
+
+    /**########################################################################################################################
+     *
+     * List of Local Functions
+     *
+     * ########################################################################################################################
+     */
+
+
+    /**
+     * @description : Request to send data to Cue Connect
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param string  $url
+     * @param string $key
+     * @param array $params
+     * @return array
+     */
+    protected function _doRequest($url, $key, $params)
+    {
+        $response = null;
+
+        // do POST - use curl
+        if (function_exists('curl_version')) {
+
+            try {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_HEADER, 0);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER,array('X-Cue-Mage-Auth: ' . $key));
+
+                $response = curl_exec($ch);
+                $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+                curl_close($ch);
+
+            } catch (Exception $e) {
+                $message = $e->getMessage();
+                Mage::log($message);
+                $this->_errors[] = $message;
+            }
+        }
+        // do GET
+        else {
+
+            $params['key'] = $key;
+            $queryString  = '?' . http_build_query($params);
+
+            try {
+                $response = file_get_contents($url . $queryString);
+            } catch (Exception $e) {
+                $message = $e->getMessage();
+                Mage::log($message);
+                $this->_errors[] = $message;
+            }
+        }
+
+        return $response;
+    }
+
+    /**
+     * Copy native wishlist items to e-List saves when accessing e-List for first time
+     * @author : Imad.T - itouil@cueconnect.com
+     * @param  [type] $product
+     * @param  [type] $description
+     * @param  [type] $customer
+     * @todo: To review
+     */
+    protected function _syncMark($product, $description, $customer)
+    {
+        if ($customer && $product) {
+            $exception = false;
+            $wishlistSyncModel = Mage::getModel('cueconnect/wishlistSync');
+
+            if ($wishlistSyncModel) {
+                $row = $wishlistSyncModel->getCollection()
+                    ->addFieldToFilter('product_id', $product->getId())
+                    ->addFieldToFilter('customer_id', $customer->getId())
+                    ->addFieldToFilter('status', $wishlistSyncModel::STATUS_DONE)
+                    ->getFirstItem();
+
+                if (!$row->getData()) {
+                    $wishlistSyncModel->setData(array(
+                        'customer_id' => $customer->getId(),
+                        'product_id' => $product->getId(),
+                        'status' => $wishlistSyncModel::STATUS_WAITING,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ));
+
+                    $id = $wishlistSyncModel->save()->getId();
+
+                    // sync product/customer
+                    $response = $this->createCueProduct($product, $description, $customer);
+                    $exception = ($response != 1);
+
+                    // update status
+                    $row = $wishlistSyncModel->load($id);
+                    if ($row->getData()) {
+                        $row->addData(array(
+                            'status' => ($response) ? $wishlistSyncModel::STATUS_DONE : $wishlistSyncModel::STATUS_ERROR,
+                        ));
+                        $row->save();
+                    }
+                }
+            }
+
+            // if unable to save local flag, then sync product/customer with Cue anyway => this means the op will be executed each time we access eList
+            if ($exception) {
+                $this->createCueProduct($product, $customer);
+            }
+        }
+    }
+
+    /**
+     * Create product
+     * @todo: To remove with _syncMark()
+     * @param $product
+     * @param $description
+     * @param $customer
+     *
+     * @return null
+     */
     protected function createCueProduct($product, $description, $customer)
     {
         if ($product && $customer) {
@@ -516,584 +915,13 @@ class CueConnect_Cue_Model_Observer
             );
 
             $url = Mage::helper('cueconnect')->getWebhookSaveMarkUrl();
-            $response = $this->doRequest($url, $key, $params);
-
-            // do POST - use curl
-            /*if (function_exists('curl_version')) {
-                try {
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_URL, $url);
-                    curl_setopt($ch, CURLOPT_HEADER);
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                    curl_setopt($ch, CURLOPT_HTTPHEADER,array('X-Cue-Mage-Auth: ' . $key));
-
-                    $response = curl_exec($ch);
-                    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);  
-                    
-                    curl_close($ch);
-                    
-                } catch (Exception $e) {
-                    Mage::log($e->getMessage());
-                }
-            }
-            // do GET
-            else {
-                $params['key'] = $key;
-                $queryString  = '?' . http_build_query($params);
-                
-                try {
-                    $response = file_get_contents($url . $queryString);
-                } catch (Exception $e) {
-                    Mage::log($e->getMessage());
-                }
-            }*/
+            $response = $this->_doRequest($url, $key, $params);
 
             return $response;
-        } 
+        }
 
         return null;
     }
 
 
-
-    /**
-     * flag local user as synced and create Cue user
-     * @param  Mage_Customer_Model_Customer $customer
-     */
-    protected function syncCustomer($customer)
-    {
-        if ($customer) {
-            $exception = false;
-            /** @var CueConnect_Cue_Model_UserSync $userSyncModel*/
-            $userSyncModel = Mage::getModel('cueconnect/userSync'); 
-
-            if ($userSyncModel) {
-                $row = $userSyncModel->getCollection()
-                    ->addFieldToFilter('customer_id', $customer->getId())
-                    ->addFieldToFilter('status', $userSyncModel::STATUS_DONE)
-                    ->getFirstItem();
-
-                if (!$row->getData()) {
-                    $userSyncModel->setData(array(
-                        'customer_id' => $customer->getId(),
-                        'status' => $userSyncModel::STATUS_WAITING,
-                        'created_at' => date('Y-m-d H:i:s')
-                    ));
-
-                    $id = $userSyncModel->save()->getId();
-
-                    // sync customer
-                    $response = $this->createCueUser($customer);
-                    $exception = ($response != 1);
-
-                    // update status
-                    $row = $userSyncModel->load($id);
-                    if ($row->getData()) {
-                        $row->addData(array(
-                            'status' => ($response) ? $userSyncModel::STATUS_DONE : $userSyncModel::STATUS_ERROR,
-                        ));
-                        $row->save();    
-                    }
-                }
-            }
-
-            // if unable to save local flag, then sync customer with Cue anyway
-            if ($exception) {
-                $this->createCueUser($customer);
-            }
-        }
-    }
-
-
-    /**
-     * copy native wishlist items to e-List saves when accessing e-List for first time
-     * @param  [type] $product  
-     * @param  [type] $description 
-     * @param  [type] $customer 
-     */
-    protected function syncMark($product, $description, $customer)
-    {
-        if ($customer && $product) {
-            $exception = false;
-            $wishlistSyncModel = Mage::getModel('cueconnect/wishlistSync'); 
-
-            if ($wishlistSyncModel) {
-                $row = $wishlistSyncModel->getCollection()
-                    ->addFieldToFilter('product_id', $product->getId())
-                    ->addFieldToFilter('customer_id', $customer->getId())
-                    ->addFieldToFilter('status', $wishlistSyncModel::STATUS_DONE)
-                    ->getFirstItem();  
-
-                if (!$row->getData()) {
-                    $wishlistSyncModel->setData(array(
-                        'customer_id' => $customer->getId(),
-                        'product_id' => $product->getId(),
-                        'status' => $wishlistSyncModel::STATUS_WAITING,
-                        'created_at' => date('Y-m-d H:i:s')
-                    ));
-
-                    $id = $wishlistSyncModel->save()->getId();
-
-                    // sync product/customer
-                    $response = $this->createCueProduct($product, $description, $customer);
-                    $exception = ($response != 1);
-
-                    // update status
-                    $row = $wishlistSyncModel->load($id);
-                    if ($row->getData()) {
-                        $row->addData(array(
-                            'status' => ($response) ? $wishlistSyncModel::STATUS_DONE : $wishlistSyncModel::STATUS_ERROR,
-                        ));
-                        $row->save();    
-                    }
-                }
-            }
-
-            // if unable to save local flag, then sync product/customer with Cue anyway => this means the op will be executed each time we access eList
-            if ($exception) {
-                $this->createCueProduct($product, $customer);
-            }
-        }
-    }
-
-
-
-    protected function doRequest($url, $key, $params)
-    {
-        $response = null;
-
-        // do POST - use curl
-        if (function_exists('curl_version')) {
-            try {
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $url);
-                curl_setopt($ch, CURLOPT_HEADER, 0);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                curl_setopt($ch, CURLOPT_HTTPHEADER,array('X-Cue-Mage-Auth: ' . $key));
-
-                $response = curl_exec($ch);
-                $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);  
-                
-                curl_close($ch);
-                
-            } catch (Exception $e) {
-                Mage::log($e->getMessage());
-            }
-        }
-        // do GET
-        else {
-            $params['key'] = $key;
-            $queryString  = '?' . http_build_query($params);
-            
-            try { 
-                $response = file_get_contents($url . $queryString);
-            } catch (Exception $e) {
-                Mage::log($e->getMessage());
-            }
-        } 
-
-        return $response;
-    }
-
-    /**
-     * add link to the Main menu of a Magento site
-     * @param  Varien_Event_Observer $observer
-     */
-    public function addToTopmenu(Varien_Event_Observer $observer)
-    {
-        if (Mage::helper('cueconnect')->isMyListEnabled()) {
-            $menu = $observer->getMenu();
-            $tree = $menu->getTree();
-            $node = new Varien_Data_Tree_Node(array(
-                'name' => 'My List',
-                'id' => 'mylist',
-                'url' => Mage::getUrl('apps/mylist'),
-                'class' => 'cue-stream'
-            ), 'id', $tree, $menu);
-            $menu->addChild($node);
-        }
-    }
-
-    /**
-     * Get order ids for the multishipping checkout, add it to session
-     *
-     * @param Varien_Event_Observer $observer
-     */
-    public function getOrderIds(Varien_Event_Observer $observer)
-    {
-        $orderIds = $observer->getOrderIds();
-        if ($orderIds && count($orderIds)) {
-            Mage::getSingleton('checkout/session')->setFirstOrderId($orderIds[0]);
-        }
-    }
-
-    /**
-     * Sync updated products data with CUE on product update attributes mass action
-     *
-     * @param Varien_Event_Observer $observer
-     *
-     * @return $this
-     */
-    public function productMassUpdate(Varien_Event_Observer $observer)
-    {
-        /** @var array $productIds */
-        $productIds = $observer->getProductIds();
-        $this->productUpdateExecute($productIds);
-    }
-
-    /**
-     * Sync import products data with CUE
-     *
-     * @param Varien_Event_Observer $observer
-     */
-    public function productsImportUpdate(Varien_Event_Observer $observer)
-    {
-        $adapter = $observer->getEvent()->getAdapter();
-        $productIds = $adapter->getAffectedEntityIds();
-        $this->productUpdateExecute($productIds);
-    }
-
-    /**
-     *  Executed sync products data with CUE
-     *
-     * @param Array $productIds
-     */
-    protected function productUpdateExecute($productIds)
-    {
-        if (count($productIds)) {
-            $this->syncProducts($productIds);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Sync updated products data with CUE on product update attributes mass action stock change
-     *
-     * @param Varien_Event_Observer $observer
-     *
-     * @return $this
-     */
-    public function productStockMassUpdate(Varien_Event_Observer $observer)
-    {
-        /** @var array $productIds */
-        $productIds = $observer->getProducts();
-        if (count($productIds)) {
-            $this->syncProducts($productIds);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Sync updated products data with CUE
-     *
-     * @param [] $productIds
-     *
-     * @return $this
-     */
-    protected function syncProducts($productIds)
-    {
-        if (!Mage::registry(self::SYNC_MASS_ACTION_NAME)) {
-            Mage::register(self::SYNC_MASS_ACTION_NAME, true);
-            /** @var CueConnect_Cue_Model_CueConnect $productUpdateModel */
-            $productUpdateModel = Mage::getModel('cueconnect/cueconnect');
-            /** @var array $errors */
-            $errors = $productUpdateModel->productsUpdate($productIds);
-            /** @var Mage_Adminhtml_Model_Session $adminSession */
-            $adminSession = Mage::getSingleton('adminhtml/session');
-            /** @var string $error */
-            foreach ($errors as $error) {
-                $adminSession->addError($error);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * Sync all customers with CUE
-     *
-     * @return bool
-     */
-    public function syncAllCustomers()
-    {
-        // check if $scheduled sync
-        $scheduled = Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED);
-        if (!$scheduled) {
-
-            return false;
-        }
-        // check retailer_id
-        $retailer_id = Mage::getStoreConfig('cueconnect/credentials/retailer_id');
-        if (is_null($retailer_id)) {
-
-            return false;
-        }
-        $this->removeScheduleCustomerSync();
-
-        /** @var CueConnect_Cue_Model_CueConnect $cueModel */
-        $cueModel = Mage::getModel('cueconnect/cueconnect');
-        $notSyncPrev =  $this->checkNotSyncedCustomer();
-        $storeCollection = Mage::getModel('core/store')->getCollection()
-            ->setLoadDefault(true);
-        foreach ($storeCollection as $store) {
-            $this->_currentStoreId = $store->getId();
-            // return sync status for current store
-            $status = $this->_getCustomerSyncStatus($store);
-
-            // skip if customers sync for current store compleate
-            if ($status == self::CUSTOMER_SYNC_COMPLETE) {
-                continue;
-            }
-            // Skip all if customer sync is processing
-            if ($status == self::CUSTOMER_SYNC_PROCESSING) {
-                return false;
-            }
-
-            // set $status processing for current store
-            $this->setCustomersSyncStatus(self::CUSTOMER_SYNC_PROCESSING);
-            $customerCollection = Mage::getModel('customer/customer')->getCollection()
-                ->addFieldToFilter('store_id', $this->_currentStoreId);
-            foreach ($customerCollection as $customer) {
-                $this->syncCustomer($customer);
-            }
-
-            //check the cueconnect_user_sync and find the customers with status - STATUS_ERROR (2) after sync
-            $notSyncUserIds = $this->checkNotSyncedCustomer();
-
-            /** @var Mage_AdminNotification_Model_Inbox $inbox */
-            $inbox = Mage::getModel('adminnotification/inbox');
-            if (count($notSyncPrev) < count($notSyncUserIds)) {
-                $this->setCustomersSyncStatus(self::CUSTOMER_SYNC_FAILED);
-                $title = Mage::helper('cueconnect')->__(
-                    'Customers Synchronization has failed for the %s store, an email was sent to Cue Connect support.
-                    Contact us on %s for more information',
-                    $store->getName(),
-                    Mage::getStoreConfig($cueModel::XML_PATH_CUE_SUPPORT_EMAIL)
-                );
-                $message = Mage::helper('cueconnect')->__(
-                    'Customer Synchronization has failed for the %s store.',
-                    $store->getName()
-                );
-                $cueModel->sendEmailToSupport($message);
-                $notificationBody = Mage::helper('cueconnect')->__(
-                    'Customer Synchronization for the %s store has failed for %s customer(s)',
-                    $store->getName(),
-                    count(array_diff($notSyncUserIds, $notSyncPrev))
-                );
-
-                $inbox->addCritical($title, $notificationBody);
-            } else {
-                $this->setCustomersSyncStatus(self::CUSTOMER_SYNC_COMPLETE);
-                $title = Mage::helper('cueconnect')->__(
-                    'Customer data has been successfully synced with Cue for the %s store',
-                    $store->getName()
-                );
-                $description = Mage::helper('cueconnect')->__('Congratulation!') . ' ' . $title;
-                $inbox->addNotice($title, $description);
-            }
-
-            $notSyncPrev = $notSyncUserIds;
-
-        }
-    }
-
-
-    /**
-     * check the cueconnect_user_sync and find the customers with status - STATUS_ERROR (2)
-     */
-    public function checkNotSyncedCustomer()
-    {
-        /** @var CueConnect_Cue_Model_UserSync $userSyncModel */
-        $userSyncModel = Mage::getModel('cueconnect/userSync');
-        $notSyncUserIds = array();
-        $userSyncCollection = $userSyncModel->getCollection()
-            ->addFieldToFilter('status', $userSyncModel::STATUS_ERROR);
-        foreach ($userSyncCollection->getItems() as $user) {
-            $notSyncUserIds[] = $user->getId();
-        }
-
-        return $notSyncUserIds;
-    }
-
-    /**
-     * Set and save customers sync status for the store
-     *
-     * @param string $value
-     */
-    protected function setCustomersSyncStatus($value)
-    {
-        $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $this->_currentStoreId);
-        Mage::getModel('core/config')->saveConfig($path, $value);
-        Mage::app()->getCacheInstance()->cleanType('config');
-    }
-
-    /**
-     * Remove schedule customer Sync. Set flat to 0
-     */
-    public function removeScheduleCustomerSync()
-    {
-        Mage::getModel('core/config')->saveConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 0);
-        Mage::app()->getStore()->setConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 0);
-        Mage::app()->getCacheInstance()->cleanType('config');
-    }
-
-    /**
-     * Get customer Sync status for the store.
-     *
-     * @return mixed
-     */
-    protected function _getCustomerSyncStatus($store)
-    {
-        $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $this->_currentStoreId);
-        $status = $store->getConfig($path);
-
-        return $status;
-    }
-
-
-    /**
-     * Check customer sync status for the stores, return true when resync should be running.
-     *
-     * @return bool
-     */
-    public function isCustomerReSyncNeeded()
-    {
-        $scheduled = Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED);
-        if ($scheduled) {
-
-            return false;
-        }
-        $storeCollection = Mage::getModel('core/store')->getCollection()
-            ->setLoadDefault(true);
-        foreach ($storeCollection as $store) {
-            $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $store->getId());
-            $status = $store->getConfig($path);
-            if ($status == self::CUSTOMER_SYNC_PROCESSING) {
-
-                return false;
-            }
-            if ($status == self::CUSTOMER_SYNC_FAILED) {
-
-                return true;
-            }
-
-        }
-        $retailer_id = Mage::getStoreConfig('cueconnect/credentials/retailer_id');
-        if (!is_null($retailer_id)) {
-
-            $this->scheduleCustomerSync();
-        }
-
-        return false;
-    }
-
-    /**
-     * Schedule customer Sync. Set flat to 1
-     */
-    public function scheduleCustomerSync()
-    {
-        Mage::getModel('core/config')->saveConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 1);
-        Mage::app()->getCacheInstance()->cleanType('config');
-    }
-
-    /**
-     * Checked updated products SKU
-     *
-     * @param Varien_Event_Observer $observer
-     */
-    public function detectProductSkuChanges($observer)
-    {
-        /* @var Mage_Catalog_Model_Product $product */
-        $product = $observer->getEvent()->getProduct();
-
-        if ($product->hasDataChanges()) {
-            try {
-                /* @var string $newSku */
-                $newSku = ($product->getData('sku')) ? $product->getData('sku') : null;
-                /* @var string $oldSku */
-                $oldSku = ($product->getOrigData('sku')) ? $product->getOrigData('sku') : null;
-
-                if ($newSku && $oldSku && ($newSku != $oldSku)) {
-                    Mage::register('old_product_sku', $oldSku);
-                }
-            } catch (Exception $e) {
-                Mage::log($e->getTraceAsString(), null, 'product_changes_fault.log');
-            }
-        }
-    }
-
-    /**
-     * Delete product from e-List when deleted in Magento or changed SKU
-     *
-     * @param array  $storeIds
-     * @param string $sku
-     */
-    protected function deleteOldSkuProduct($storeIds, $sku)
-    {
-        // For each related stores
-        foreach ($storeIds as $store_id) {
-            // Get store
-            $store = Mage::getModel('core/store')->load($store_id);
-            if ($store->getConfig('cueconnect/enabled/enabled')) {
-                // Retailuser SOAP client
-                $soap_client = Mage::helper('cueconnect')->getSoapClient(
-                    Mage::helper('cueconnect')->getWsUrl('retailuser'),
-                    $store->getConfig('cueconnect/credentials/login'),
-                    $store->getConfig('cueconnect/credentials/password')
-                );
-
-                // Get place ID
-                $place_id =  null;
-                try {
-                    $result = $soap_client->get(array(
-                        'email' => $store->getConfig('cueconnect/credentials/login')
-                    ));
-                    $place_id = $result->data->id;
-                }
-                catch (Exception $e) {
-                    Mage::log($e->getMessage());
-                }
-
-                // Product SOAP client
-                $soap_client = Mage::helper('cueconnect')->getSoapClient(
-                    Mage::helper('cueconnect')->getWsUrl('product'),
-                    $store->getConfig('cueconnect/credentials/login'),
-                    $store->getConfig('cueconnect/credentials/password')
-                );
-
-                // Get and delete Cue Connect product
-                try {
-                    $result = $soap_client->get(array(
-                        'place_id' => $place_id,
-                        'sku' => $sku,
-                        'page' => 1,
-                        'page_size' => 1
-                    ));
-                    if ($result && isset($result->data) && isset($result->data[0]) && isset($result->inpagecount) && $result->inpagecount) {
-                        $cueconnect_product = $result->data[0];
-                        $soap_client->delete(array(
-                            'place_id' => $place_id,
-                            'data' => array($cueconnect_product->product_imic),
-                            'count' => 1
-                        ));
-                    }
-                }
-                catch (Exception $e) {
-                    Mage::log($e->getMessage());
-                    $message = Mage::helper('cueconnect')->__(
-                        'An error occurred while synchronization product data with Cueconnect for the %s store.
-                            You can find more details in the log file',
-                        $store->getName()
-                    );
-                    Mage::getSingleton('adminhtml/session')->addError($message);
-                }
-            }
-        }
-    }
 }

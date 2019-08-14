@@ -57,6 +57,15 @@ class CueConnect_Cue_Block_BaseCueBlock extends Mage_Core_Block_Template {
 
         return 1;
     }
+
+    /**
+     * get environment
+     * @return integer
+     */
+    public function getEnv() {
+        $store = Mage::app()->getStore();
+        return $store->getConfig('cueconnect/environment/env');
+    }
     
     /**
      * return current product sku

@@ -15,10 +15,6 @@ class CueConnect_Cue_ElistController extends Mage_Core_Controller_Front_Action
      * View export progression and last asked exports
      */
     public function indexAction() {
-    	// if PB, redirect to home page - only CP is allowed here
-		if (1 == Mage::helper('cueconnect')->getElistMode()) {
-			Mage::app()->getResponse()->setRedirect(Mage::getBaseUrl());
-		}
 
     	if (!Mage::getSingleton('customer/session')->isLoggedIn()){
     		Mage::getSingleton('customer/session')->setBeforeAuthUrl(Mage::helper('core/url')->getCurrentUrl());

@@ -2,7 +2,7 @@
 <config>
     <sections>
         <cueconnect module="cueconnect" translate="label">
-            <label>Cue</label>
+            <label>Cue Connect</label>
             <tab>catalog</tab>
             <frontend_type>text</frontend_type>
             <sort_order>300</sort_order>
@@ -29,8 +29,8 @@
                     </fields>
                 </environment>
                 <credentials translate="label">
-                    <label>Cue API Credentials</label>
-                    <comment><![CDATA[<p>Get your Cue API key from your Merchant Hub account under the Code Implementation section.</p>]]></comment>
+                    <label>Cue Credentials</label>
+                    <comment><![CDATA[<p>Click <a href="https://business.cueconnect.com/partner/register?plan=build" target="_BLANK">HERE</a>  to create your Cue account and find your API Key under the "Code Implementation" section on your Merchant Hub Panel.</p> ]]></comment>
                     <frontend_type>text</frontend_type>
                     <sort_order>1</sort_order>
                     <show_in_default>1</show_in_default>
@@ -38,7 +38,7 @@
                     <show_in_store>1</show_in_store>
                     <fields>
                         <api_key translate="label">
-                            <label>API Credentials</label>
+                            <label>API Key</label>
                             <tooltip>Get your Cue API key from your Merchant Hub account.</tooltip>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
@@ -106,9 +106,7 @@
                         </enabled>
                     </fields>
                 </enabled>
-                
-                
-                <mode translate="label">
+                <!--<mode translate="label">
                     <label>My-List Version</label>
                     <comment><![CDATA[<p>Available in two versions: a customizable widget or enterprise fully integrated that works seamlessly with your existing Customer Account and Profile.</p><p><strong>Standalone Widget:</strong> My-List technology is deployed on a standalone widget. Shoppers will opt into this service by signing up through the My-list login popup modal.</p><p><strong>Fully Integrated:</strong> works seamlessly with your existing Customer Account and Profile. Shoppers simply need to create an account with your store to have access to My-List capabilities.</p>]]></comment>                    
                     <frontend_type>text</frontend_type>
@@ -127,7 +125,7 @@
                             <show_in_store>1</show_in_store>
                         </mode>
                     </fields>
-                </mode>
+                </mode> -->
                 <collection translate="label">
                     <label>My List</label>
                     <comment><![CDATA[<p>The &quot;My List&quot; link can be automatically added to the top links or manually inserted in any location in your theme files. <br>If you wish to manually place the &quot;My List&quot; link, set this option to &quot;No&quot; and follow the steps in the Manual Setup Instructions section below in this page.</p>]]></comment>
@@ -169,7 +167,7 @@
                     </fields>
                 </ob>
                 <favorite translate="label">
-                    <label>Add to Wishlist Link</label>
+                    <label>Add to Wishlist</label>
                     <comment><![CDATA[<p>The &quot;Add to Wishlist&quot; link can be automatically added or manually inserted into the product page.<br>If you wish to manually place the &quot;Add to Wishlist&quot; link, set this option to &quot;No&quot; and follow the steps in the Manual Setup Instructions section below in this page.</p>]]></comment>
                     <frontend_type>text</frontend_type>
                     <sort_order>6</sort_order>
@@ -228,7 +226,6 @@
                         </enabled>
                     </fields>
                 </tracking>
-
                 <setup translate="label">
                     <label>Manual Setup Instructions</label>
                     <comment><![CDATA[
@@ -238,7 +235,7 @@
 
             <p>Copy the &lt;a&gt; tag and paste it in the theme's source code where you wish the 'My List' link to appear:</p>
             
-            <div class="reg_main" style="padding:0 20px;margin-bottom: 20px">
+            <div class="reg_main" style="padding:0 20px;margin-bottom: 10px">
                 <textarea readonly="readonly" style="width: 80%; height: 50px;">
 
 <a class="cue-stream"> My Wish List </a>
@@ -246,8 +243,8 @@
                 </textarea>
             </div>
 
-            <div style="padding:0 20px;margin-bottom: 20px; color: blue; font-size: 12px;">Tip: <br>
-            We recommend that you place the link in your header or menu.<br>You can replace the &lt;a&gt; by any HTML tag that fits your design best.
+            <div style="padding:0 20px;margin-bottom: 20px; color: blue; font-size: 12px;">
+            We recommend that you place the link in your header or menu. You can replace the &lt;a&gt; by any HTML tag that fits your design best.
             </div>
             
             <strong>Step 2. Implement the 'Share' button</strong>
@@ -263,7 +260,7 @@
             </div>
 
 
-            <strong>Step 3. Implement the 'Add to Wishlist' link</strong>
+            <strong>Step 3. Implement the 'Add to Wishlist'</strong>
             
 
             <p>Copy the &lt;div&gt; tag and insert it in your product's html page, where you wish the link to appear.</p>
@@ -278,7 +275,7 @@
                 </textarea>
             </div>
 
-            <strong>Step 4. Implement the 'Price Alert' link</strong>
+            <strong>Step 4. Implement the 'Price Alert'</strong>
             
 
             <p>Copy the &lt;div&gt; tag and insert it in your product's html page, where you wish the link to appear.</p>

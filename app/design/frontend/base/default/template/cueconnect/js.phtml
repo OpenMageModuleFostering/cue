@@ -1,6 +1,11 @@
 <?php if ($this->isEnabled() && $this->getRetailerId()): ?>
-
+<?php
+if($this->getEnv() && $this->getEnv() != ''){
+?>
+<script src="https://<?php echo $this->getEnv(); ?>-stream.cueconnect.net/js/cue-seed.js"></script>
+<?php }else{ ?>
 <script src="https://stream.cueconnect.com/js/cue-seed.js"></script>
+<?php } ?>
 <script>
 function doLoad() {
   CUE({

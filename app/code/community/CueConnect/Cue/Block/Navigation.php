@@ -12,12 +12,13 @@
 class CueConnect_Cue_Block_Navigation extends Mage_Page_Block_Switch 
 {
     public function addMyElistLink() {
+
         if (Mage::helper('core/data')->isModuleEnabled('CueConnect_Cue')) {
             if (Mage::helper('cueconnect')->isEnabled()) {
-                if (Mage::helper('cueconnect')->isCollectionAuto()) {
+                if (Mage::helper('cueconnect')->setMyListLinkAuto()) {
                     $parentBlock = $this->getParentBlock();
                     if ($parentBlock) {
-                        $parentBlock->addLink('My List', $this->getUrl('apps/mylist'), 'My List', false, array(), 200, null, 'class="cue-stream"');    
+                        $parentBlock->addLink('My List', $this->getUrl('apps/mylist'), 'My List', false, array(), 200, null, '');
                     }    
                 }
             }

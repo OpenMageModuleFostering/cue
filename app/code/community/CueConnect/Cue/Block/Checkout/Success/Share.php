@@ -11,7 +11,6 @@
 
 class CueConnect_Cue_Block_Checkout_Success_Share extends CueConnect_Cue_Block_BaseCueBlock
 {
-    const CUE_CART_TRACK_URL = 'https://api.cueconnect.com/imi/cart_track/json';
     protected $_firstProductSku = null;
     protected $_order = null;
     protected $_itemsData = null;
@@ -52,7 +51,7 @@ class CueConnect_Cue_Block_Checkout_Success_Share extends CueConnect_Cue_Block_B
      */
     public function getTrackingSource()
     {
-        $str = self::CUE_CART_TRACK_URL .
+        $str = Mage::helper('cueconnect')->getHost('api') . Mage::getStoreConfig('cueconnect/carttracking/url').
             '?api_key=' . $this->getApiKey() .
             '&place_id=' . $this->getRetailerId() .
             '&email=' . $this->_getOrder()->getCustomerEmail() .

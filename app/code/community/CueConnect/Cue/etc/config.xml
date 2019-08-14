@@ -2,7 +2,7 @@
 <config>
     <modules>
         <CueConnect_Cue>
-            <version>3.0.19</version>
+            <version>3.0.23</version>
         </CueConnect_Cue>
     </modules>
     <global>
@@ -59,24 +59,6 @@
             </cueconnect_read>
         </resources>
         <events>
-            <catalog_product_save_after>
-                <observers>
-                    <cueconnect_cue_observer_update_product>
-                        <type>singleton</type>
-                        <class>CueConnect_Cue_Model_Observer</class>
-                        <method>updateProduct</method>
-                    </cueconnect_cue_observer_update_product>
-                </observers>
-            </catalog_product_save_after>
-            <catalog_product_delete_before>
-                <observers>
-                    <cueconnect_cue_observer_delete_product>
-                        <type>singleton</type>
-                        <class>CueConnect_Cue_Model_Observer</class>
-                        <method>deleteProduct</method>
-                    </cueconnect_cue_observer_delete_product>
-                </observers>
-            </catalog_product_delete_before>
             <customer_register_success>
                 <observers>
                     <cueconnect_cue_customer_register_success>
@@ -108,7 +90,7 @@
                 <observers>
                     <cueconnect_cue>
                         <class>cueconnect/observer</class>
-                        <method>addToTopmenu</method>
+                        <method>enableMyListLink</method>
                     </cueconnect_cue>
                 </observers>
             </page_block_html_topmenu_gethtml_before>
@@ -206,43 +188,46 @@
                     <cueconnect_cue_version_change>
                         <type>singleton</type>
                         <class>CueConnect_Cue_Model_Observer</class>
-                        <method>adminCueConnectUpdated</method>
+                        <method>ConfigUpdated</method>
                     </cueconnect_cue_version_change>
                 </observers>
             </admin_system_config_changed_section_cueconnect>
+
+            <catalog_product_delete_before>
+                <observers>
+                    <cueconnect_cue_observer_delete_product>
+                        <type>singleton</type>
+                        <class>CueConnect_Cue_Model_Observer</class>
+                        <method>deleteProduct</method>
+                    </cueconnect_cue_observer_delete_product>
+                </observers>
+            </catalog_product_delete_before>
+            <catalog_product_save_before>
+                <observers>
+                    <cueconnect_cue_product_changes>
+                        <type>singleton</type>
+                        <class>cueconnect/observer</class>
+                        <method>productSkuChanges</method>
+                    </cueconnect_cue_product_changes>
+                </observers>
+            </catalog_product_save_before>
             <catalog_product_save_after>
                 <observers>
                     <cueconnect_cue_product_update>
                         <type>singleton</type>
                         <class>CueConnect_Cue_Model_Observer</class>
-                        <method>adminProductUpdated</method>
+                        <method>productUpdated</method>
                     </cueconnect_cue_product_update>
                 </observers>
             </catalog_product_save_after>
-            <catalog_product_attribute_update_after>
+            <catalog_product_attribute_update_before>
                 <observers>
                     <cueconnect_cue_product_update_attribute_after>
                         <class>cueconnect/observer</class>
                         <method>productMassUpdate</method>
                     </cueconnect_cue_product_update_attribute_after>
                 </observers>
-            </catalog_product_attribute_update_after>
-            <catalog_product_website_update>
-                <observers>
-                    <cueconnect_cue_product_update_website_after>
-                        <class>cueconnect/observer</class>
-                        <method>productMassUpdate</method>
-                    </cueconnect_cue_product_update_website_after>
-                </observers>
-            </catalog_product_website_update>
-            <catalog_product_stock_item_mass_change>
-                <observers>
-                    <cueconnect_cue_product_update_stock_after>
-                        <class>cueconnect/observer</class>
-                        <method>productStockMassUpdate</method>
-                    </cueconnect_cue_product_update_stock_after>
-                </observers>
-            </catalog_product_stock_item_mass_change>
+            </catalog_product_attribute_update_before>
             <catalog_product_import_finish_before>
                 <observers>
                     <cueconnect_cue_product_import_finish_before>
@@ -251,15 +236,7 @@
                     </cueconnect_cue_product_import_finish_before>
                 </observers>
             </catalog_product_import_finish_before>
-            <catalog_product_save_before>
-                <observers>
-                    <cueconnect_cue_product_changes>
-                        <type>singleton</type>
-                        <class>cueconnect/observer</class>
-                        <method>detectProductSkuChanges</method>
-                    </cueconnect_cue_product_changes>
-                </observers>
-            </catalog_product_save_before>
+
         </events>
     </adminhtml>
     <default>
@@ -285,9 +262,9 @@
             <tracking>
                 <enabled>1</enabled>
             </tracking>
-            <webservice>
-                <url>http://rapi.cueconnect.com/</url>
-            </webservice>
+            <carttracking>
+                <url>/imi/cart_track/json</url>
+            </carttracking>
             <taxomomy_id>fcc3465</taxomomy_id>
             <image>
                 <width>480</width>
@@ -298,26 +275,30 @@
             </path>
             <webhook>
                 <save_customer>
-                    <url>https://business.cueconnect.com/magento/saveCustomer</url>
+                    <url>/magento/saveCustomer</url>
                     <key>026132282952ccf731a765413bf11ca32ccbc683ab92c7ad3171b2a0a71ef21d69d1334efcf79da5ecc2d496221e0e28ed025e71d210ebf16e70bfa338c4f2d3</key>
                 </save_customer>
                 <save_mark>
-                    <url>https://business.cueconnect.com/magento/saveMark</url>
+                    <url>/magento/saveMark</url>
                     <key>bf83fc65e0e710e68e17c811bdb6e5d48ea2e805d8fc4af3ac9c8c428631fa044fa6509f128e6891b6d5e8df54508e045b53d95289d72f2f46d98499286772ca</key>
                 </save_mark>
-                <price_changed>
-                    <url>https://business.cueconnect.com/magento/priceChanged</url>
+                <product_changed>
+                    <url>/magento/productChanged</url>
                     <key>f7ba9544bdded1d3a1aead3cb43557b340bf69ce1919a94e7282bfe11f573c94ffc375bf778bc374677c8150ae3880e9fa1502bb5e4235d7628e1ed3e95a6895</key>
-                </price_changed>
-                <select_version>
-                    <url>https://business.cueconnect.com/magento/selectVersion</url>
+                </product_changed>
+                <product_deleted>
+                    <url>/magento/productDeleted</url>
+                    <key>f7ba9544bdded1d3a1aead3cb43557b340bf69ce1919a94e7282bfe11f573c94ffc375bf778bc374677c8150ae3880e9fa1502bb5e4235d7628e1ed3e95a6895</key>
+                </product_deleted>
+                <configuration_changed>
+                    <url>/magento/configurationChanged</url>
                     <key>a2645def81375a4f88475acc6b4b0639fd87bfaef715b828e1704f79bac6262ef0e85876dd7047765360678b3372812b5f1741b3abfe9159a3d50fe01e05d757</key>
-                </select_version>
+                </configuration_changed>
             </webhook>
             <support>
                 <email>dev@cueconnect.com</email>
                 <name>CUE support</name>
-                <subject>Synchronization has failed</subject>
+                <subject>Synchronization has failed for </subject>
             </support>
         </cueconnect>
     </default>

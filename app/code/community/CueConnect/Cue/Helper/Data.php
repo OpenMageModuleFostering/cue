@@ -15,16 +15,6 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
     const XML_PATH_TRACKING_ENABLED = 'cueconnect/tracking/enabled';
 
     /**
-     * Checks if My List is enabled
-     *
-     * @return bool
-     */
-    public function isMyListEnabled()
-    {
-        return Mage::getStoreConfigFlag(self::XML_PATH_MYLIST_ENABLED);
-    }
-
-    /**
      * Checks if Tracking is enabled
      *
      * @return bool
@@ -35,85 +25,22 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
     }
 
     /**
-     * Get webhook URL for adding customers to Cue
+     * check if module is enabled
      *
      * @return string
      */
-    public function getWebhookSaveCustomerUrl() {
+    public function isEnabled() {
 
-        return Mage::getStoreConfig('cueconnect/webhook/save_customer/url');
+        $status = Mage::getStoreConfig('cueconnect/enabled');
+
+        if(is_array($status)){
+            if (isset($status['enabled'])) {
+                return $status['enabled'];
+            }
+        }
+
+        return 0;
     }
-    
-    /**
-     * Get webhook auth key for adding customers to Cue
-     *
-     * @return string
-     */
-    public function getWebhookSaveCustomerKey() {
-
-        return Mage::getStoreConfig('cueconnect/webhook/save_customer/key');
-    }
-    
-    /**
-     * Get webhook URL for adding marks to Cue
-     *
-     * @return string
-     */
-    public function getWebhookSaveMarkUrl() {
-
-        return Mage::getStoreConfig('cueconnect/webhook/save_mark/url');
-    }
-    
-    /**
-     * Get webhook auth key for adding marks to Cue
-     *
-     * @return string
-     */
-    public function getWebhookSaveMarkKey() {
-
-        return Mage::getStoreConfig('cueconnect/webhook/save_mark/key');
-    }
-
-    /**
-     * Get webhook auth key for version change
-     *
-     * @return string
-     */
-    public function getWebhookSelectVersionKey() {
-
-        return Mage::getStoreConfig('cueconnect/webhook/select_version/key');
-    }
-
-    /**
-     * Get webhook url for version change
-     *
-     * @return string
-     */
-    public function getWebhookSelectVersionUrl() {
-
-        return Mage::getStoreConfig('cueconnect/webhook/select_version/url');
-    }
-
-    /**
-     * Get webhook auth key for price change
-     *
-     * @return string
-     */
-    public function getWebhookPriceChangedKey() {
-
-        return Mage::getStoreConfig('cueconnect/webhook/price_changed/key');
-    }
-
-    /**
-     * Get webhook url for price change
-     *
-     * @return string
-     */
-    public function getWebhookPriceChangedUrl() {
-
-        return Mage::getStoreConfig('cueconnect/webhook/price_changed/url');
-    }
-
 
     /**
      * Get retailer id from config
@@ -122,33 +49,6 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getRetailerId() {
         return Mage::getStoreConfig('cueconnect/credentials/retailer_id');
-    }
-
-    /**
-     * check if module is enabled
-     *
-     * @return string
-     */
-    public function isEnabled() {
-        return Mage::getStoreConfig('cueconnect/enabled');
-    }
-
-
-
-    /**
-     * Get webhook URL for adding marks to Cue
-     *
-     * @return string
-     */
-    public function getElistMode() {
-        $mode = Mage::getStoreConfig('cueconnect/mode');
-        if (is_array($mode)) {
-            if (isset($mode['mode'])) {
-                return $mode['mode'];
-            }
-        }
-
-        return 1;
     }
 
     /**
@@ -165,9 +65,9 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
      *
      * @return bool
      */
-    public function isCollectionAuto() {
-        $enabled = Mage::getStoreConfig('cueconnect/collection');
+    public function setMyListLinkAuto() {
 
+        $enabled = Mage::getStoreConfig('cueconnect/collection');
         if (is_array($enabled)) {
             if (isset($enabled['enabled'])) {
                 return $enabled['enabled'];
@@ -177,10 +77,6 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
         return 0;
     }
 
-
-
-
-    
     /**
      * Get retailer object via SOAP
      *
@@ -200,6 +96,8 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
         }
         return $result->data;
     }
+    
+    
     
     /**
      * Cut an array in multiple smaller array
@@ -267,7 +165,6 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
         }
     }
 
-
     /**
      * Get WSSE Header
      *
@@ -293,7 +190,7 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
      * @deprecated
      */
     public function getWsUrl($service) {
-        return Mage::getStoreConfig('cueconnect/webservice/url').$service."?wsdl";
+        return $this->getHost('rapi').'/'.$service."?wsdl";
     }
     
     /**
@@ -308,6 +205,122 @@ class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
         $header = new SoapHeader("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd", "Security",  $authvars);
         $client->__setSoapHeaders($header);
         return $client;
+    }
+
+
+    /**
+     * Get webhook URL for adding customers to Cue
+     *
+     * @return string
+     */
+    public function getWebhookSaveCustomerUrl() {
+        return $this->getHost() . Mage::getStoreConfig('cueconnect/webhook/save_customer/url');
+    }
+
+    /**
+     * Get webhook auth key for adding customers to Cue
+     *
+     * @return string
+     */
+    public function getWebhookSaveCustomerKey() {
+
+        return Mage::getStoreConfig('cueconnect/webhook/save_customer/key');
+    }
+
+    /**
+     * Get webhook URL for adding marks to Cue
+     *
+     * @return string
+     */
+    public function getWebhookSaveMarkUrl() {
+
+        return $this->getHost() . Mage::getStoreConfig('cueconnect/webhook/save_mark/url');
+    }
+
+    /**
+     * Get webhook auth key for adding marks to Cue
+     *
+     * @return string
+     */
+    public function getWebhookSaveMarkKey() {
+
+        return Mage::getStoreConfig('cueconnect/webhook/save_mark/key');
+    }
+
+    /**
+     * Get webhook auth key for version change
+     *
+     * @return string
+     */
+    public function getWebhookConfigurationChangedKey() {
+
+        return Mage::getStoreConfig('cueconnect/webhook/configuration_changed/key');
+    }
+
+    /**
+     * Get webhook url for version change
+     *
+     * @return string
+     */
+    public function getWebhookConfigurationChangedUrl() {
+
+        return $this->getHost() . Mage::getStoreConfig('cueconnect/webhook/configuration_changed/url');
+    }
+
+    /**
+     * Get webhook auth key for product change
+     *
+     * @return string
+     */
+    public function getWebhookProductChangedKey() {
+
+        return Mage::getStoreConfig('cueconnect/webhook/product_changed/key');
+    }
+
+    /**
+     * Get webhook url for product change
+     *
+     * @return string
+     */
+    public function getWebhookProductChangedUrl() {
+
+        return $this->getHost() . Mage::getStoreConfig('cueconnect/webhook/product_changed/url');
+    }
+
+    /**
+     * Get webhook auth key for product deleted
+     *
+     * @return string
+     */
+    public function getWebhookProductDeletedKey() {
+
+        return Mage::getStoreConfig('cueconnect/webhook/product_deleted/key');
+    }
+
+    /**
+     * Get webhook url for product deleted
+     *
+     * @return string
+     */
+    public function getWebhookProductDeletedUrl() {
+
+        return $this->getHost() . Mage::getStoreConfig('cueconnect/webhook/product_deleted/url');
+    }
+
+    /**
+     * Get cue host depends on selected env
+     *
+     * @return string
+     */
+    public function getHost($application = 'business'){
+
+        $ext = Mage::getStoreConfig('cueconnect/environment/env');
+        if($ext && $ext != ''){
+            return 'https://'.$ext.'-'.$application.'.cueconnect.net';
+        }else{
+            return 'https://'.$application.'.cueconnect.com';
+        }
+
     }
     
 }
