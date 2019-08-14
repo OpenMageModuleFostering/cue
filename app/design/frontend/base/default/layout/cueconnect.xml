@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<layout version="0.1.2">
+    <catalog_product_view>
+        <reference name="content">
+            <reference name="product.info.extrahint">
+                <block type="cueconnect/share" name="product.info.cueconnect.share" template="cueconnect/share.phtml" />
+                <block type="cueconnect/favorite" name="product.info.cueconnect.favorite" template="cueconnect/favorite.phtml" />
+                <block type="cueconnect/alert" name="product.info.cueconnect.alert" template="cueconnect/alert.phtml" />
+            </reference>
+        </reference>
+    </catalog_product_view>
+    <cueconnect_elist_index>
+        <reference name="root">
+            <action method="setTemplate">
+                <template>page/1column.phtml</template>
+            </action>
+
+            <reference name="content">
+                <block type="cueconnect/elist" name="cueconnect.elist" template="cueconnect/elist.phtml">
+                    <block type="customer/form_login" name="customer_form_login" template="cueconnect/customer/form/login.phtml" />
+                    <block type="customer/form_register" name="customer_form_register" template="cueconnect/customer/form/register.phtml" />
+                    <block type="customer/account_forgotpassword" name="forgotPassword" template="cueconnect/customer/form/forgotpassword.phtml" />
+                </block>
+
+            </reference>
+        </reference>
+        
+    </cueconnect_elist_index>
+    <default>
+        <reference name="root">
+            <reference name="head">
+                <block type="cueconnect/meta" name="cueconnect.meta" template="cueconnect/meta.phtml" />
+            </reference>
+            <reference name="header">
+                <reference name="top.container">
+                    <block type="cueconnect/collection" name="cueconnect.button.collection" template="cueconnect/collection.phtml" />
+                </reference>
+            </reference>
+            <reference name="after_body_start">
+                <block type="cueconnect/js" name="cueconnect.js" template="cueconnect/js.phtml" />
+            </reference>
+            <reference name="top.links">
+                <block type="cueconnect/navigation" name="cueconnect.navigation">
+                    <action method="addMyElistLink"></action>
+                </block>
+            </reference>
+           <!--  <reference name="top.links">
+                <block type="cueconnect/navigation" name="cueconnect.toplinks" template="page/html/header.phtml" />
+            </reference> -->
+            <!-- <reference name="top.links">
+                <action method="addLink" translate="label title">
+                    <label>My e-List</label>
+                    <url>cueconnect/elist</url>
+                    <title>My e-List</title>
+                    <prepare>true</prepare>
+                    <urlParams helper="core/url/getUrl"/>
+                    <position>1</position>
+                    <liParams>id="cue-stream-li"</liParams>
+                    <aParams>class="cue-stream" id="cue-stream-nav"</aParams>
+                    <beforeText/>
+                    <afterText>|</afterText>
+                </action>
+            </reference> -->
+        </reference>
+    </default>
+</layout>

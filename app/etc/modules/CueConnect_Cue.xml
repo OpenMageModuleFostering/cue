@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <CueConnect_Cue>
+            <active>true</active>
+            <codePool>community</codePool>
+        </CueConnect_Cue>
+    </modules>
+</config>

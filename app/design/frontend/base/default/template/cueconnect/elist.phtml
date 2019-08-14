@@ -1,0 +1,173 @@
+<?php
+// CP
+if (($this->getMode() == 2) && $this->getRetailerId() && $this->isEnabled()) : 
+	// signed in so show elist
+	if ($this->getCustomerEmail()):
+?>
+<iframe id="streamIFrame" name="streamIFrame" src="https://www.cueconnect.com/poweredby/<?php echo $this->getRetailerId() ?>/?origin=<?php echo Mage::getBaseUrl(); ?>&amp;version=embed&amp;from=stream&amp;email=<?php echo $this->getCustomerEmail() ?>" height="640px" width="100%" scrolling="no"></iframe>
+<?php 
+	// show prelogin
+	else:
+?>
+	<!-- BEGIN Cue e-List -->
+	<style>
+    iframe {border: none;}
+    #cue-magento-forms-container{
+        display: block;
+        width: 100%;
+        padding: 30px 0 100px 0;
+        margin: auto;
+        max-width: 1000px;
+    }
+    .cue-auth-and-info-container{
+        display: table;
+        width: 100%
+    }
+    .cue-auth-container{
+        display: table-cell;
+        width: 50%;
+        text-align: left;
+    }
+    .cue-info-container{
+        display: table-cell;
+        width: 50%;
+        text-align: left;
+    }
+    .cue-form-container{
+        width: 100%;
+        margin: auto;
+    }
+    .cue-form-container .account-login .content{
+        min-height: auto !important;
+    }
+    .cue-form-container .form-list .input-box { 
+    	width:90% ; 
+    	max-width:260px;
+    }
+    .cue-form-container .buttons-set { 
+    	margin-top: 0 !important;
+    	background: #dee5e8;
+    }
+    .cue-forgot-pswd-container{
+        width: 100%;
+        margin: auto;
+    }
+    .cue-form-input{
+        width: 96% !important;
+    }
+    .cue-secondary-button{
+        border: none;
+        background-color: transparent;
+    }
+    #cue-show-signup{
+        padding: 20px 0;
+        width: 100%;
+        margin: auto;
+    }
+    .cue-title{
+        line-height: normal;
+    }
+    .cue-forgot-pswd{
+        display: inline-block;
+        margin: 10px 0;
+    }
+    @media screen and (max-width: 798px){
+        .cue-auth-container{
+            display: block;
+            width: 100%;
+        }
+        .cue-info-container{
+            display: block;
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- user is not authenticated -->
+<div  id="cue-magento-forms-container">
+    <div class="cue-auth-and-info-container">
+        <div class="cue-info-container">
+            <div style="margin: auto;max-width: 400px;">
+                <h2 class="title cue-title">Welcome to My e-List</h2>
+
+                <p style="padding: 12px 0 12px 0;">Everything you care about in one place. Built just for you.</p>
+                <ul style="margin: auto;display: inline-block;text-align: left;padding: 0 0 0 20px;line-height: 2;">
+                    <li>Wishlist items</li>
+                    <li>Shares and Posts you want to remember</li>
+                    <li>Price Alerts on items you care about</li>
+                    <li>Special offers and rewards</li>
+                    <li>Always on, always available</li>
+                </ul>
+                <p style="padding: 50px 0 50px 0;">Goodbye forgetting. Hello remembering</p>
+            </div>
+        </div>
+
+        <div class="cue-auth-container">
+            <!-- register form START -->
+            <div id="customer-register" class="cue-form-container" style="display: none;">
+                <div class="">
+                    <div id="register" class="">
+                        <h2 class="title cue-title">Create Account</h2>
+
+                        <?php echo $this->getChildHtml('customer_form_register') ?>
+                    </div><!-- #register -->
+                </div><!-- .row -->
+            </div><!-- #customer-register -->
+            <!-- register form END -->
+
+
+            <!-- login form START -->
+            <div id="customer-login" class="cue-form-container">
+                <div class="">
+                    <div id="login" class="">
+                        <h2 class="title cue-title">Login</h2>
+                        <?php echo $this->getChildHtml('customer_form_login') ?>
+                    </div>
+
+                    <div id="recover-password" style="display:none;width: 100% !important;" class="cue-forgot-pswd-container">
+                    	<?php echo $this->getChildHtml('forgotPassword') ?>
+                    </div>
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                function showRecoverPasswordForm() {
+                    document.getElementById('recover-password').style.display = 'block';
+                    document.getElementById('login').style.display='none';
+                }
+
+                function hideRecoverPasswordForm() {
+                    document.getElementById('recover-password').style.display = 'none';
+                    document.getElementById('login').style.display = 'block';
+                }
+
+                if (window.location.hash == '#recover') { showRecoverPasswordForm() }
+            </script>
+            <!-- login form END -->
+
+            <p  id="cue-show-signup" >Don't have an account? <a href="#" onclick="cueShowSignup();return false;">Sign up</a></p>
+
+            <script>
+                function cueShowSignup(){
+                    document.getElementById('cue-show-signup').style.display = 'none';
+                    document.getElementById('customer-login').style.display = 'none';
+                    document.getElementById('customer-register').style.display = 'block';
+                    console.log(this);
+                }
+
+                function cueShowSignin(){
+                    document.getElementById('customer-register').style.display = 'none';
+                    document.getElementById('customer-login').style.display = 'block';
+                    document.getElementById('cue-show-signup').style.display = 'block';
+                }
+
+                var pid = <?php echo ($this->getRetailerId()) ? $this->getRetailerId() : 0 ; ?>;
+            </script>
+        </div>
+    </div>
+</div>
+<!-- END Cue e-List -->
+<?php
+	endif;
+endif; 
+?>
