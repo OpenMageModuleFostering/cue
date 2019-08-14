@@ -1,5 +1,28 @@
-<?php // Todo: Update the JS snippet code  ?>
 <?php if ($this->isEnabled() && $this->getRetailerId()): ?>
+<script src="https://stream.cueconnect.com/js/cue-seed.js"></script>
+<script>
+function cueInit() {
+	CUE({
+	'retailId' : <?php echo $this->getRetailerId(); ?>,
+	'apiKey' : '<?php echo $this->getApiKey(); ?>',
+	'cid' : <?php echo $this->getCID(); ?>,
+	'path' : '<?php echo $this->getElistPath(); ?>'
+	});
+}
+function cueKickstart() {
+var _onload = window.onload;
+if (typeof window.onload != 'function') {
+	window.onload = cueInit;
+} else {
+	window.onload = function() {
+		_onload();
+		cueInit();
+	}
+}
+}
+cueKickstart();
+</script>
+<?php /*
 <script type="text/javascript">
     function executeOnLoad(script) {
         var script = script || this;
@@ -13,4 +36,5 @@
     scriptElement.setAttribute('onreadystatechange', 'executeOnLoad.apply(this)');
     document.body.appendChild(scriptElement);
 </script>
+*/ ?>
 <?php endif; ?>
