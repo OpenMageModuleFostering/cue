@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+    <name>Cue</name>
+    <version>3.0.10</version>
+    <stability>stable</stability>
+    <license uri="http://opensource.org/licenses/osl-3.0.php">Open Software License (OSL)</license>
+    <channel>community</channel>
+    <extends/>
+    <summary>Powerful onsite marketing solution that helps increase engagement and conversions.</summary>
+    <description>Drive greater ROI using an experience and tools shoppers already engage with on your site today. Provide Cue as a free personal shopping assistant to your customers and get an inside look at the items they save and conversations they have about them. Use the data to personalize various touch points of their shopping journey and thoughtfully stimulate conversions. Receive a free 90-day trial when you sign up and grow your business risk-free.</description>
+    <notes>- removed catalog sync&#xD;
+- bug fixes.</notes>
+    <authors><author><name>Cue Connect</name><user>hrais</user><email>hrais@cueconnect.com</email></author></authors>
+    <date>2016-06-23</date>
+    <time>16:01:21</time>
+    <contents><target name="magecommunity"><dir name="CueConnect"><dir name="Cue"><dir name="sql"><dir name="cueconnect_setup"><file name="mysql4-install-3.0.10.php" hash="35e874c8e139497043b0e50ea6cf2fa0"/><file name="mysql4-upgrade-3.0.9-3.0.10.php" hash="54cfba6c455bebb9e614013642fb8fdd"/></dir></dir></dir></dir></target><target name="magedesign"><dir name="frontend"><dir name="base"><dir name="default"><dir name="layout"><file name="cueconnect.xml" hash=""/></dir></dir></dir></dir></target><target name="mageetc"><dir name="modules"><file name="CueConnect_Cue.xml" hash=""/></dir></target></contents>
+    <compatible/>
+    <dependencies><required><php><min>5.1.0</min><max>5.6.22</max></php><extension><name>Core</name><min/><max/></extension></required></dependencies>
+</package>
