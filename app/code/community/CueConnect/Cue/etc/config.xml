@@ -2,7 +2,7 @@
 <config>
     <modules>
         <CueConnect_Cue>
-            <version>3.0.16</version>
+            <version>3.0.17</version>
         </CueConnect_Cue>
     </modules>
     <global>

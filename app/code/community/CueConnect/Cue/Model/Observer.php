@@ -261,7 +261,6 @@ class CueConnect_Cue_Model_Observer
                 'sku'                   => (string)$product->getSku(),
                 'name'                  => $product->getName(),
                 'description'           => (string)$product->getDescription(),
-                'comment'               => (string)$description,
                 'brand'                 => (string)$product->getAttributeText('manufacturer'),
                 'upc'                   => uniqid(),
                 'sms_name'              => $product->getName(),

@@ -1,40 +1,22 @@
 <?php if ($this->isEnabled() && $this->getRetailerId()): ?>
+
 <script src="https://stream.cueconnect.com/js/cue-seed.js"></script>
 <script>
-function cueInit() {
-	CUE({
-	'retailId' : <?php echo $this->getRetailerId(); ?>,
-	'apiKey' : '<?php echo $this->getApiKey(); ?>',
-	'cid' : <?php echo $this->getCID(); ?>,
-	'path' : '<?php echo $this->getElistPath(); ?>'
-	});
+function doLoad() {
+  CUE({
+     'retailId': <?php echo $this->getRetailerId(); ?>,
+     'apiKey': '<?php echo $this->getApiKey(); ?>',
+     'cid': <?php echo $this->getCID(); ?>,
+     'path': '<?php echo $this->getElistPath() ?>'
+  });
 }
-function cueKickstart() {
-var _onload = window.onload;
-if (typeof window.onload != 'function') {
-	window.onload = cueInit;
-} else {
-	window.onload = function() {
-		_onload();
-		cueInit();
-	}
+if ( window.addEventListener ) { 
+  window.addEventListener( "load", doLoad, false );
+} else if ( window.attachEvent ) { 
+  window.attachEvent( "onload", doLoad );
+} else if ( window.onLoad ) {
+  window.onload = doLoad;
 }
-}
-cueKickstart();
 </script>
-<?php /*
-<script type="text/javascript">
-    function executeOnLoad(script) {
-        var script = script || this;
-        if (!script.readyState || script.readyState == "loaded" || script.readyState == "complete") {
-            CUE({'retailId': <?php echo $this->getRetailerId(); ?>, 'apiKey': '<?php echo $this->getApiKey(); ?>', 'cid': <?php echo $this->getCID(); ?>, 'path': '<?php echo $this->getElistPath() ?>'});
-        }
-    }
-    var scriptElement = document.createElement('script');
-    scriptElement.setAttribute('src', "https://stream.cueconnect.com/js/cue-seed.js");
-    scriptElement.setAttribute('onload', 'executeOnLoad.apply(this)');
-    scriptElement.setAttribute('onreadystatechange', 'executeOnLoad.apply(this)');
-    document.body.appendChild(scriptElement);
-</script>
-*/ ?>
+
 <?php endif; ?>
