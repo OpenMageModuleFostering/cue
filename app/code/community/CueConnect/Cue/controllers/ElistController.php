@@ -33,7 +33,7 @@ class CueConnect_Cue_ElistController extends Mage_Core_Controller_Front_Action
         $this->loadLayout();
 
         // update page title
-		$this->getLayout()->getBlock("head")->setTitle($this->__("Cue e-List"));
+		$this->getLayout()->getBlock("head")->setTitle($this->__("Cue My List"));
 
 		// show breadcrumbs
 		$breadcrumbs = $this->getLayout()->getBlock("breadcrumbs");
@@ -44,8 +44,8 @@ class CueConnect_Cue_ElistController extends Mage_Core_Controller_Front_Action
 		));
 
 		$breadcrumbs->addCrumb("elist", array(
-			"label" => $this->__("e-List"),
-			"title" => $this->__("e-List")
+			"label" => $this->__("My-List"),
+			"title" => $this->__("My-List")
 		));
 
 		// render layout

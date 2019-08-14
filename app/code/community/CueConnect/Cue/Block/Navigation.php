@@ -17,7 +17,7 @@ class CueConnect_Cue_Block_Navigation extends Mage_Page_Block_Switch
                 if (Mage::helper('cueconnect')->isCollectionAuto()) {
                     $parentBlock = $this->getParentBlock();
                     if ($parentBlock) {
-                        $parentBlock->addLink('My e-List', $this->getUrl('apps/myelist'), 'My e-List', false, array(), 200, null, 'class="cue-stream"');    
+                        $parentBlock->addLink('My List', $this->getUrl('apps/mylist'), 'My List', false, array(), 200, null, 'class="cue-stream"');    
                     }    
                 }
             }

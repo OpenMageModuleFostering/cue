@@ -49,9 +49,9 @@
             </reference> -->
             <!-- <reference name="top.links">
                 <action method="addLink" translate="label title">
-                    <label>My e-List</label>
+                    <label>My List</label>
                     <url>cueconnect/elist</url>
-                    <title>My e-List</title>
+                    <title>My List</title>
                     <prepare>true</prepare>
                     <urlParams helper="core/url/getUrl"/>
                     <position>1</position>
