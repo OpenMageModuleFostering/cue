@@ -10,7 +10,18 @@
  */
 
 class CueConnect_Cue_Model_Observer
-{   
+{
+    const XML_PATH_CUSTOMER_SYNCED_WITH_ERROR = 'cueconnect/customer_sync_%s/error_synced_customer';
+    const XML_PATH_CUSTOMER_SYNC_STATUS = 'cueconnect/customer_sync_%s/status';
+    const XML_PATH_CUSTOMER_SYNC_SCHEDULED = 'cueconnect/customer_sync/scheduled';
+
+    const CUSTOMER_SYNC_FAILED = 'failed';
+    const CUSTOMER_SYNC_COMPLETE = 'complete';
+    const CUSTOMER_SYNC_PROCESSING = 'processing';
+
+    const SYNC_MASS_ACTION_NAME = 'cue_sync_mass_action';
+
+    protected $_currentStoreId = false;
 
     /**
      * accessing e-List - used to sync saved items to Cue if not already done
@@ -107,6 +118,16 @@ class CueConnect_Cue_Model_Observer
             // Get store
             $store = Mage::getModel('core/store')->load($store_id);
             if ($store->getConfig('cueconnect/enabled/enabled')) {
+                $cueLogin = $store->getConfig('cueconnect/credentials/login');
+                $cuePassword = $store->getConfig('cueconnect/credentials/password');
+                if (!$cueLogin || !$cuePassword) {
+                    $message = Mage::helper('cueconnect')->__(
+                        'Please check the following Cue API Credentials: E-mail and Password for the %s store.',
+                        $store->getName()
+                    );
+                    Mage::getSingleton('adminhtml/session')->addError($message);
+                    continue;
+                }
                 // Retailuser SOAP client
                 $soap_client = Mage::helper('cueconnect')->getSoapClient(
                         Mage::helper('cueconnect')->getWsUrl('retailuser'),
@@ -124,6 +145,12 @@ class CueConnect_Cue_Model_Observer
                 }
                 catch (Exception $e) {
                     Mage::log($e->getMessage());
+                    $message = Mage::helper('cueconnect')->__(
+                        'An error occurred while synchronization product data with Cueconnect for the %s store.
+                            You can find more details in the log file',
+                        $store->getName()
+                    );
+                    Mage::getSingleton('adminhtml/session')->addError($message);
                 }
 
                 if ($place_id) {
@@ -192,6 +219,12 @@ class CueConnect_Cue_Model_Observer
                     }
                     catch (Exception $e) {
                         Mage::log($e->getMessage());
+                        $message = Mage::helper('cueconnect')->__(
+                            'An error occurred while synchronization product data with Cueconnect for the %s store.
+                            You can find more details in the log file',
+                            $store->getName()
+                        );
+                        Mage::getSingleton('adminhtml/session')->addError($message);
                     }
                 }
             }
@@ -225,7 +258,7 @@ class CueConnect_Cue_Model_Observer
                 $config->saveConfig('cueconnect/credentials/retailer_id', $retailerId, 'default', 1);
                 Mage::app()->getCacheInstance()->cleanType('config');
                 */
-                Mage::getModel('core/config')->saveConfig('cueconnect/credentials/retailer_id', $retailerId);    
+                Mage::getModel('core/config')->saveConfig('cueconnect/credentials/retailer_id', $retailerId);
                 Mage::app()->getCacheInstance()->cleanType('config');
             }
         }
@@ -238,7 +271,11 @@ class CueConnect_Cue_Model_Observer
     public function adminProductUpdated(Varien_Event_Observer $observer)
     {       
         $product = $observer->getEvent()->getProduct();
-        
+
+        if (Mage::registry('old_product_sku')) {
+            $this->deleteOldSkuProduct($product->getStoreIds(), Mage::registry('old_product_sku'));
+            Mage::unregister('old_product_sku');
+        }
         // For each related stores
         foreach ($product->getStoreIds() as $storeId) {
             $store = Mage::getModel('core/store')->load($storeId);
@@ -276,7 +313,7 @@ class CueConnect_Cue_Model_Observer
             $this->doRequest($url, $key, $params);
         }
     }
-    
+
 
     /**
      * delete product from e-List when deleted in Magento (Magento -> Cue)
@@ -286,7 +323,7 @@ class CueConnect_Cue_Model_Observer
     {
         // Get catalog product
         $catalog_product = $observer->getEvent()->getProduct();
-        
+
         // For each related stores
         foreach ($catalog_product->getStoreIds() as $store_id) {
             // Get store
@@ -317,7 +354,7 @@ class CueConnect_Cue_Model_Observer
                     $store->getConfig('cueconnect/credentials/login'),
                     $store->getConfig('cueconnect/credentials/password')
                 );
-                
+
                 // Get and delete Cue Connect product
                 try {
                     $result = $soap_client->get(array(
@@ -337,7 +374,13 @@ class CueConnect_Cue_Model_Observer
                 }
                 catch (Exception $e) {
                     Mage::log($e->getMessage());
-                }                
+                    $message = Mage::helper('cueconnect')->__(
+                        'An error occurred while synchronization product data with Cueconnect for the %s store.
+                            You can find more details in the log file',
+                        $store->getName()
+                    );
+                    Mage::getSingleton('adminhtml/session')->addError($message);
+                }
             }
         }
     }
@@ -350,8 +393,14 @@ class CueConnect_Cue_Model_Observer
     protected function createCueUser($customer) {
         if ($customer) {
             $storeId = $customer->getStoreId();
+            if  (!$storeId && $this->_currentStoreId ) {
+                $storeId = $this->_currentStoreId;
+            }
             if (!$storeId) {
                 $storeId = Mage::app()->getStore()->getStoreId();
+            }
+            if (!$storeId) {
+                $storeId = Mage::app()->getDefaultStoreView()->getStoreId();
             }
 
             $store = Mage::getModel('core/store')->load($storeId);
@@ -511,19 +560,20 @@ class CueConnect_Cue_Model_Observer
 
     /**
      * flag local user as synced and create Cue user
-     * @param  Mage_Customer_Model_Customer $customer 
+     * @param  Mage_Customer_Model_Customer $customer
      */
-    protected function syncCustomer($customer) 
+    protected function syncCustomer($customer)
     {
         if ($customer) {
             $exception = false;
+            /** @var CueConnect_Cue_Model_UserSync $userSyncModel*/
             $userSyncModel = Mage::getModel('cueconnect/userSync'); 
 
             if ($userSyncModel) {
                 $row = $userSyncModel->getCollection()
                     ->addFieldToFilter('customer_id', $customer->getId())
                     ->addFieldToFilter('status', $userSyncModel::STATUS_DONE)
-                    ->getFirstItem();  
+                    ->getFirstItem();
 
                 if (!$row->getData()) {
                     $userSyncModel->setData(array(
@@ -619,7 +669,7 @@ class CueConnect_Cue_Model_Observer
             try {
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_URL, $url);
-                curl_setopt($ch, CURLOPT_HEADER);
+                curl_setopt($ch, CURLOPT_HEADER, 0);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -648,5 +698,402 @@ class CueConnect_Cue_Model_Observer
 
         return $response;
     }
-    
+
+    /**
+     * add link to the Main menu of a Magento site
+     * @param  Varien_Event_Observer $observer
+     */
+    public function addToTopmenu(Varien_Event_Observer $observer)
+    {
+        if (Mage::helper('cueconnect')->isMyListEnabled()) {
+            $menu = $observer->getMenu();
+            $tree = $menu->getTree();
+            $node = new Varien_Data_Tree_Node(array(
+                'name' => 'My List',
+                'id' => 'mylist',
+                'url' => Mage::getUrl('apps/mylist'),
+                'class' => 'cue-stream'
+            ), 'id', $tree, $menu);
+            $menu->addChild($node);
+        }
+    }
+
+    /**
+     * Get order ids for the multishipping checkout, add it to session
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function getOrderIds(Varien_Event_Observer $observer)
+    {
+        $orderIds = $observer->getOrderIds();
+        if ($orderIds && count($orderIds)) {
+            Mage::getSingleton('checkout/session')->setFirstOrderId($orderIds[0]);
+        }
+    }
+
+    /**
+     * Sync updated products data with CUE on product update attributes mass action
+     *
+     * @param Varien_Event_Observer $observer
+     *
+     * @return $this
+     */
+    public function productMassUpdate(Varien_Event_Observer $observer)
+    {
+        /** @var array $productIds */
+        $productIds = $observer->getProductIds();
+        $this->productUpdateExecute($productIds);
+    }
+
+    /**
+     * Sync import products data with CUE
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function productsImportUpdate(Varien_Event_Observer $observer)
+    {
+        $adapter = $observer->getEvent()->getAdapter();
+        $productIds = $adapter->getAffectedEntityIds();
+        $this->productUpdateExecute($productIds);
+    }
+
+    /**
+     *  Executed sync products data with CUE
+     *
+     * @param Array $productIds
+     */
+    protected function productUpdateExecute($productIds)
+    {
+        if (count($productIds)) {
+            $this->syncProducts($productIds);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Sync updated products data with CUE on product update attributes mass action stock change
+     *
+     * @param Varien_Event_Observer $observer
+     *
+     * @return $this
+     */
+    public function productStockMassUpdate(Varien_Event_Observer $observer)
+    {
+        /** @var array $productIds */
+        $productIds = $observer->getProducts();
+        if (count($productIds)) {
+            $this->syncProducts($productIds);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Sync updated products data with CUE
+     *
+     * @param [] $productIds
+     *
+     * @return $this
+     */
+    protected function syncProducts($productIds)
+    {
+        if (!Mage::registry(self::SYNC_MASS_ACTION_NAME)) {
+            Mage::register(self::SYNC_MASS_ACTION_NAME, true);
+            /** @var CueConnect_Cue_Model_CueConnect $productUpdateModel */
+            $productUpdateModel = Mage::getModel('cueconnect/cueconnect');
+            /** @var array $errors */
+            $errors = $productUpdateModel->productsUpdate($productIds);
+            /** @var Mage_Adminhtml_Model_Session $adminSession */
+            $adminSession = Mage::getSingleton('adminhtml/session');
+            /** @var string $error */
+            foreach ($errors as $error) {
+                $adminSession->addError($error);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Sync all customers with CUE
+     *
+     * @return bool
+     */
+    public function syncAllCustomers()
+    {
+        // check if $scheduled sync
+        $scheduled = Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED);
+        if (!$scheduled) {
+
+            return false;
+        }
+        // check retailer_id
+        $retailer_id = Mage::getStoreConfig('cueconnect/credentials/retailer_id');
+        if (is_null($retailer_id)) {
+
+            return false;
+        }
+        $this->removeScheduleCustomerSync();
+
+        /** @var CueConnect_Cue_Model_CueConnect $cueModel */
+        $cueModel = Mage::getModel('cueconnect/cueconnect');
+        $notSyncPrev =  $this->checkNotSyncedCustomer();
+        $storeCollection = Mage::getModel('core/store')->getCollection()
+            ->setLoadDefault(true);
+        foreach ($storeCollection as $store) {
+            $this->_currentStoreId = $store->getId();
+            // return sync status for current store
+            $status = $this->_getCustomerSyncStatus($store);
+
+            // skip if customers sync for current store compleate
+            if ($status == self::CUSTOMER_SYNC_COMPLETE) {
+                continue;
+            }
+            // Skip all if customer sync is processing
+            if ($status == self::CUSTOMER_SYNC_PROCESSING) {
+                return false;
+            }
+
+            // set $status processing for current store
+            $this->setCustomersSyncStatus(self::CUSTOMER_SYNC_PROCESSING);
+            $customerCollection = Mage::getModel('customer/customer')->getCollection()
+                ->addFieldToFilter('store_id', $this->_currentStoreId);
+            foreach ($customerCollection as $customer) {
+                $this->syncCustomer($customer);
+            }
+
+            //check the cueconnect_user_sync and find the customers with status - STATUS_ERROR (2) after sync
+            $notSyncUserIds = $this->checkNotSyncedCustomer();
+
+            /** @var Mage_AdminNotification_Model_Inbox $inbox */
+            $inbox = Mage::getModel('adminnotification/inbox');
+            if (count($notSyncPrev) < count($notSyncUserIds)) {
+                $this->setCustomersSyncStatus(self::CUSTOMER_SYNC_FAILED);
+                $title = Mage::helper('cueconnect')->__(
+                    'Customers Synchronization has failed for the %s store, an email was sent to Cue Connect support.
+                    Contact us on %s for more information',
+                    $store->getName(),
+                    Mage::getStoreConfig($cueModel::XML_PATH_CUE_SUPPORT_EMAIL)
+                );
+                $message = Mage::helper('cueconnect')->__(
+                    'Customer Synchronization has failed for the %s store.',
+                    $store->getName()
+                );
+                $cueModel->sendEmailToSupport($message);
+                $notificationBody = Mage::helper('cueconnect')->__(
+                    'Customer Synchronization for the %s store has failed for %s customer(s)',
+                    $store->getName(),
+                    count(array_diff($notSyncUserIds, $notSyncPrev))
+                );
+
+                $inbox->addCritical($title, $notificationBody);
+            } else {
+                $this->setCustomersSyncStatus(self::CUSTOMER_SYNC_COMPLETE);
+                $title = Mage::helper('cueconnect')->__(
+                    'Customer data has been successfully synced with Cue for the %s store',
+                    $store->getName()
+                );
+                $description = Mage::helper('cueconnect')->__('Congratulation!') . ' ' . $title;
+                $inbox->addNotice($title, $description);
+            }
+
+            $notSyncPrev = $notSyncUserIds;
+
+        }
+    }
+
+
+    /**
+     * check the cueconnect_user_sync and find the customers with status - STATUS_ERROR (2)
+     */
+    public function checkNotSyncedCustomer()
+    {
+        /** @var CueConnect_Cue_Model_UserSync $userSyncModel */
+        $userSyncModel = Mage::getModel('cueconnect/userSync');
+        $notSyncUserIds = array();
+        $userSyncCollection = $userSyncModel->getCollection()
+            ->addFieldToFilter('status', $userSyncModel::STATUS_ERROR);
+        foreach ($userSyncCollection->getItems() as $user) {
+            $notSyncUserIds[] = $user->getId();
+        }
+
+        return $notSyncUserIds;
+    }
+
+    /**
+     * Set and save customers sync status for the store
+     *
+     * @param string $value
+     */
+    protected function setCustomersSyncStatus($value)
+    {
+        $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $this->_currentStoreId);
+        Mage::getModel('core/config')->saveConfig($path, $value);
+        Mage::app()->getCacheInstance()->cleanType('config');
+    }
+
+    /**
+     * Remove schedule customer Sync. Set flat to 0
+     */
+    public function removeScheduleCustomerSync()
+    {
+        Mage::getModel('core/config')->saveConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 0);
+        Mage::app()->getStore()->setConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 0);
+        Mage::app()->getCacheInstance()->cleanType('config');
+    }
+
+    /**
+     * Get customer Sync status for the store.
+     *
+     * @return mixed
+     */
+    protected function _getCustomerSyncStatus($store)
+    {
+        $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $this->_currentStoreId);
+        $status = $store->getConfig($path);
+
+        return $status;
+    }
+
+
+    /**
+     * Check customer sync status for the stores, return true when resync should be running.
+     *
+     * @return bool
+     */
+    public function isCustomerReSyncNeeded()
+    {
+        $scheduled = Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED);
+        if ($scheduled) {
+
+            return false;
+        }
+        $storeCollection = Mage::getModel('core/store')->getCollection()
+            ->setLoadDefault(true);
+        foreach ($storeCollection as $store) {
+            $path = sprintf(self::XML_PATH_CUSTOMER_SYNC_STATUS, $store->getId());
+            $status = $store->getConfig($path);
+            if ($status == self::CUSTOMER_SYNC_PROCESSING) {
+
+                return false;
+            }
+            if ($status == self::CUSTOMER_SYNC_FAILED) {
+
+                return true;
+            }
+
+        }
+        $retailer_id = Mage::getStoreConfig('cueconnect/credentials/retailer_id');
+        if (!is_null($retailer_id)) {
+
+            $this->scheduleCustomerSync();
+        }
+
+        return false;
+    }
+
+    /**
+     * Schedule customer Sync. Set flat to 1
+     */
+    public function scheduleCustomerSync()
+    {
+        Mage::getModel('core/config')->saveConfig(self::XML_PATH_CUSTOMER_SYNC_SCHEDULED, 1);
+        Mage::app()->getCacheInstance()->cleanType('config');
+    }
+
+    /**
+     * Checked updated products SKU
+     *
+     * @param Varien_Event_Observer $observer
+     */
+    public function detectProductSkuChanges($observer)
+    {
+        /* @var Mage_Catalog_Model_Product $product */
+        $product = $observer->getEvent()->getProduct();
+
+        if ($product->hasDataChanges()) {
+            try {
+                /* @var string $newSku */
+                $newSku = ($product->getData('sku')) ? $product->getData('sku') : null;
+                /* @var string $oldSku */
+                $oldSku = ($product->getOrigData('sku')) ? $product->getOrigData('sku') : null;
+
+                if ($newSku && $oldSku && ($newSku != $oldSku)) {
+                    Mage::register('old_product_sku', $oldSku);
+                }
+            } catch (Exception $e) {
+                Mage::log($e->getTraceAsString(), null, 'product_changes_fault.log');
+            }
+        }
+    }
+
+    /**
+     * Delete product from e-List when deleted in Magento or changed SKU
+     *
+     * @param array  $storeIds
+     * @param string $sku
+     */
+    protected function deleteOldSkuProduct($storeIds, $sku)
+    {
+        // For each related stores
+        foreach ($storeIds as $store_id) {
+            // Get store
+            $store = Mage::getModel('core/store')->load($store_id);
+            if ($store->getConfig('cueconnect/enabled/enabled')) {
+                // Retailuser SOAP client
+                $soap_client = Mage::helper('cueconnect')->getSoapClient(
+                    Mage::helper('cueconnect')->getWsUrl('retailuser'),
+                    $store->getConfig('cueconnect/credentials/login'),
+                    $store->getConfig('cueconnect/credentials/password')
+                );
+
+                // Get place ID
+                $place_id =  null;
+                try {
+                    $result = $soap_client->get(array(
+                        'email' => $store->getConfig('cueconnect/credentials/login')
+                    ));
+                    $place_id = $result->data->id;
+                }
+                catch (Exception $e) {
+                    Mage::log($e->getMessage());
+                }
+
+                // Product SOAP client
+                $soap_client = Mage::helper('cueconnect')->getSoapClient(
+                    Mage::helper('cueconnect')->getWsUrl('product'),
+                    $store->getConfig('cueconnect/credentials/login'),
+                    $store->getConfig('cueconnect/credentials/password')
+                );
+
+                // Get and delete Cue Connect product
+                try {
+                    $result = $soap_client->get(array(
+                        'place_id' => $place_id,
+                        'sku' => $sku,
+                        'page' => 1,
+                        'page_size' => 1
+                    ));
+                    if ($result && isset($result->data) && isset($result->data[0]) && isset($result->inpagecount) && $result->inpagecount) {
+                        $cueconnect_product = $result->data[0];
+                        $soap_client->delete(array(
+                            'place_id' => $place_id,
+                            'data' => array($cueconnect_product->product_imic),
+                            'count' => 1
+                        ));
+                    }
+                }
+                catch (Exception $e) {
+                    Mage::log($e->getMessage());
+                    $message = Mage::helper('cueconnect')->__(
+                        'An error occurred while synchronization product data with Cueconnect for the %s store.
+                            You can find more details in the log file',
+                        $store->getName()
+                    );
+                    Mage::getSingleton('adminhtml/session')->addError($message);
+                }
+            }
+        }
+    }
 }

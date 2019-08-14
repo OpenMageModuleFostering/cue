@@ -251,15 +251,6 @@
                     </cueconnect_cue_product_import_finish_before>
                 </observers>
             </catalog_product_import_finish_before>
-            <catalog_product_save_before>
-                <observers>
-                    <cueconnect_cue_product_changes>
-                        <type>singleton</type>
-                        <class>cueconnect/observer</class>
-                        <method>detectProductSkuChanges</method>
-                    </cueconnect_cue_product_changes>
-                </observers>
-            </catalog_product_save_before>
         </events>
     </adminhtml>
     <default>
@@ -286,7 +277,7 @@
                 <enabled>1</enabled>
             </tracking>
             <webservice>
-                <url>http://rapi.cueconnect.com/</url>
+                <url>http://qa-rapi.cueconnect.net/</url>
             </webservice>
             <taxomomy_id>fcc3465</taxomomy_id>
             <image>
@@ -298,19 +289,19 @@
             </path>
             <webhook>
                 <save_customer>
-                    <url>https://business.cueconnect.com/magento/saveCustomer</url>
+                    <url>https://qa-business.cueconnect.net/magento/saveCustomer</url>
                     <key>026132282952ccf731a765413bf11ca32ccbc683ab92c7ad3171b2a0a71ef21d69d1334efcf79da5ecc2d496221e0e28ed025e71d210ebf16e70bfa338c4f2d3</key>
                 </save_customer>
                 <save_mark>
-                    <url>https://business.cueconnect.com/magento/saveMark</url>
+                    <url>https://qa-business.cueconnect.net/magento/saveMark</url>
                     <key>bf83fc65e0e710e68e17c811bdb6e5d48ea2e805d8fc4af3ac9c8c428631fa044fa6509f128e6891b6d5e8df54508e045b53d95289d72f2f46d98499286772ca</key>
                 </save_mark>
                 <price_changed>
-                    <url>https://business.cueconnect.com/magento/priceChanged</url>
+                    <url>https://qa-business.cueconnect.net/magento/priceChanged</url>
                     <key>f7ba9544bdded1d3a1aead3cb43557b340bf69ce1919a94e7282bfe11f573c94ffc375bf778bc374677c8150ae3880e9fa1502bb5e4235d7628e1ed3e95a6895</key>
                 </price_changed>
                 <select_version>
-                    <url>https://business.cueconnect.com/magento/selectVersion</url>
+                    <url>https://qa-business.cueconnect.net/magento/selectVersion</url>
                     <key>a2645def81375a4f88475acc6b4b0639fd87bfaef715b828e1704f79bac6262ef0e85876dd7047765360678b3372812b5f1741b3abfe9159a3d50fe01e05d757</key>
                 </select_version>
             </webhook>

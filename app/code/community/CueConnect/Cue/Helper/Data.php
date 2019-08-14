@@ -11,6 +11,29 @@
 
 class CueConnect_Cue_Helper_Data extends Mage_Core_Helper_Abstract
 {
+    const XML_PATH_MYLIST_ENABLED = 'cueconnect/collection/enabled';
+    const XML_PATH_TRACKING_ENABLED = 'cueconnect/tracking/enabled';
+
+    /**
+     * Checks if My List is enabled
+     *
+     * @return bool
+     */
+    public function isMyListEnabled()
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_MYLIST_ENABLED);
+    }
+
+    /**
+     * Checks if Tracking is enabled
+     *
+     * @return bool
+     */
+    public function isTrackingEnabled()
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_TRACKING_ENABLED);
+    }
+
     /**
      * Get webhook URL for adding customers to Cue
      *

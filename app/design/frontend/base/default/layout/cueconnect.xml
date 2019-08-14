@@ -63,4 +63,16 @@
             </reference> -->
         </reference>
     </default>
+    <checkout_onepage_success>
+        <reference name="content">
+            <block type="cueconnect/checkout_success_share" name="product.info.cueconnect.share"
+                   template="cueconnect/checkout/success/share.phtml" after="-"/>
+        </reference>
+    </checkout_onepage_success>
+    <checkout_multishipping_success>
+        <reference name="content">
+            <block type="cueconnect/checkout_success_share" name="product.info.cueconnect.share"
+                   template="cueconnect/checkout/success/share.phtml" after="-"/>
+        </reference>
+    </checkout_multishipping_success>
 </layout>
