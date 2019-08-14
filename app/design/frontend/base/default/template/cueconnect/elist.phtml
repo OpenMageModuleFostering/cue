@@ -1,0 +1,452 @@
+<?php
+// CP
+if (($this->getMode() == 2) && $this->getRetailerId() && $this->isEnabled()) : 
+    
+    $place_id = $this->getRetailerId() ? $this->getRetailerId() : 0;
+    $origin = Mage::getBaseUrl();
+
+    if ($this->getCustomerEmail()):
+	// signed in so show my-list
+?>
+
+<iframe 
+    id="streamIFrame" 
+    name="streamIFrame" 
+    src="https://www.cueconnect.com/poweredby/<?php echo $place_id ?>/?origin=<?php echo $origin; ?>&amp;version=embed&amp;from=stream&amp;email=<?php echo $this->getCustomerEmail() ?>" 
+    height="640px" 
+    width="100%" 
+    scrolling="no" 
+    style="border:none;display:block;max-width:100%;margin: 0 auto;"
+></iframe>
+
+<?php else :
+    // show prelogin
+?>
+    <!-- BEGIN Cue e-List -->
+    <style>
+
+    #cue-magento-forms-container iframe {border: none;}
+
+    #cue-magento-forms-container{
+        display: table;
+        table-layout: fixed;
+        width: 100%;
+        min-height: 640px;
+        padding:0;
+        margin: 0 auto;
+    }
+
+    #cue-magento-forms-container h1,
+    #cue-magento-forms-container h2,
+    #cue-magento-forms-container h3 {
+        font-size: 2em;
+        border:none;
+        font-weight: normal;
+        display:block;
+        line-height: 1.5em;
+        margin: 0 0 1em 0;
+    }
+
+    #cue-magento-forms-container .legend {
+        display:none;
+    }
+
+    #cue-magento-forms-container p {
+        margin: 0 0 1em 0;
+        line-height: 1.5em;
+    }
+
+    #cue-magento-forms-container ul,
+    #cue-magento-forms-container ol {
+        margin: 0 0 1em 0;
+        line-height: 1.5em;
+        padding: 0 0 0 1.5em;
+        list-style: disc;
+    }
+
+    #cue-magento-forms-container ul li {
+        line-height: 1.5em;        
+    }
+
+    #cue-magento-forms-container ul.form-list {
+        padding: 0;
+        list-style:none;
+    }
+
+    #cue-magento-forms-container label {
+        background:none;
+    }
+
+    #cue-magento-forms-container .buttons-set {
+        text-align: inherit;
+        clear:both;
+        border:none;
+        margin: 1em 0;
+        padding: 0;
+    }
+
+    #cue-magento-forms-container .buttons-set p.required {
+        float:none;
+        display:block;
+    }
+
+    #cue-magento-forms-container .buttons-set a {
+        float:none !important;
+        display:block;
+        line-height: 1.5em;
+        margin-bottom: 1em;
+        padding:0;
+    }
+
+    #cue-magento-forms-container .buttons-set button.button {
+        float:inherit;
+        clear:both;
+        display:block;
+        margin: 0;
+        min-width:10em;
+    }
+
+    .cue-info-container,
+    .cue-auth-container{
+        display: table-cell;
+        text-align: left;
+        width:50%;
+    }
+
+    #cue-magento-forms-container #recover-password {
+        display:none;
+    }
+
+    .cue-auth-container input[type="text"],
+    .cue-auth-container input[type="email"],
+    .cue-auth-container input[type="password"] {
+        display:inline-block;
+        width: 20em;
+        max-width:100%;
+    }
+
+    #cue-faq-container {
+        padding: 0;
+    }
+
+    #cue-external-footer {
+        width: 100%;
+        height: auto;
+        overflow:hidden;
+        border-top: 1px solid #ccc;
+        padding: .5em 0;
+    }
+
+    .cue-links {
+        float:left;
+    }
+
+    .cue-links-right {
+        float:right;
+    }
+
+
+    @media screen and (max-width: 798px){
+        #cue-magento-forms-container {
+            display:block;
+        }
+        #cue-magento-forms-container input {
+            width: 100%;
+        }
+        .cue-auth-container,
+        .cue-info-container{
+            display: block;
+            width: 100%;
+        }
+    }
+   
+</style>
+
+<!-- user is not authenticated -->
+
+<div id="cue-magento-forms-container">
+    <div class="cue-info-container">
+        <h2 class="title cue-title">Welcome to My List</h2>
+        <p>Everything you care about in one place. Built just for you.</p>
+        <ul>
+            <li>Wishlist items</li>
+            <li>Shares and Posts you want to remember</li>
+            <li>Price Alerts on items you care about</li>
+            <li>Special offers and rewards</li>
+            <li>Always on, always available</li>
+        </ul>
+        <p>Goodbye forgetting. Hello remembering</p>
+    </div>
+
+    <div class="cue-auth-container">
+        <!-- register form START -->
+        <div id="customer-register" class="cue-form-container" style="display: none;">
+            <div class="">
+                <div id="register" class="">
+                    <h2 class="title cue-title">Create Account</h2>
+                    <?php echo $this->getChildHtml('customer_form_register') ?>
+                </div><!-- #register -->
+            </div><!-- .row -->
+        </div><!-- #customer-register -->
+        <!-- register form END -->
+
+
+        <!-- login form START -->
+        <div id="customer-login" class="cue-form-container">
+            <div class="">
+                <div id="login" class="">
+                    <h2 class="title cue-title">Login</h2>
+                    <?php echo $this->getChildHtml('customer_form_login') ?>
+                </div>
+
+                <div id="recover-password" class="cue-forgot-pswd-container">
+                	<?php echo $this->getChildHtml('forgotPassword') ?>
+                </div>
+
+            </div>
+        </div>
+        <!-- login form END -->
+
+        <p  id="cue-show-signup" >Don't have an account? <a href="#" onclick="cueShowSignup();return false;">Sign up</a></p>
+
+    </div>
+</div>
+
+<div id="cue-faq-container" style="display: none;">
+    <div style="width:100%;position:relative;">
+        <iframe id="faq_container_iframe" class="faqcontainer" name="streamIFrame" src="https://www.cueconnect.com/poweredby/<?php echo $place_id ?>/?origin=<?php echo $origin; ?>&amp;action=faq" height="640px" width="100%" scrolling="no" style="outline: none; display: block; border: none; overflow-y: auto; z-index: 999999;max-width:100%;background-color: #fff">
+        </iframe>
+    </div>
+</div>
+
+
+<div id="cue-external-footer">
+    <div id="cue_links" class="cue-links">
+        <a href="#" id="open_learnmore">Learn More</a>
+        |
+        <a href="#" id="open_faq" class="faqs" >FAQs</a>
+    </div>
+
+    <div class="cue-links">
+        <a id="go_back" style="display: none;" href="#">« Go Back</a>
+    </div>
+    
+    <div class="cue-links-right">
+        
+        <span id="imi-external-footer-title">My List</span> powered by
+        <a href="http://www.cueconnect.com" target="_BLANK">
+            <svg height="10" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 431.6 147.8" style="enable-background:new 0 0 431.6 147.8;max-width:35px;" xml:space="preserve">
+                        <style type="text/css">.cueWhiteNoTMSVG0{fill:#000000;}.cueWhiteNoTMSVG1{display:none;}.cueWhiteNoTMSVG2{display:inline;fill:#000000;}</style>
+                <g>
+                    <path class="cueWhiteNoTMSVG0" d="M124.2,111.6c-2.1-2.1-4.2-2.1-6.7,0.7c-3.9,4.2-17.6,20.8-44,20.8c-31.3,0-57.7-25.3-57.7-59.5c0-33.4,26-58.4,58.1-58.4c22.2,0,36.9,12.3,40.5,16.2c2.1,2.1,4.9,3.2,7.4,0.7l3.5-3.5c2.1-1.8,2.5-4.2,0.7-6.3C119.6,14.1,101.3,0,73.9,0C34.1,0,0,31.7,0,73.9c0,42.6,34.1,73.9,73.9,73.9c29.2,0,50-18.7,55.2-27.1c1.4-2.1,0.7-3.9-1-5.6L124.2,111.6z"></path>
+                </g>
+                <g>
+                    <path class="cueWhiteNoTMSVG0" d="M412.3,24.6C385.4-4.8,339-8.5,307.9,20c-31.4,28.8-31.4,75.1-4.5,104.4c19.7,21.5,47.5,24.2,57.3,22.4c2.5-0.4,3.3-2.1,3.4-4.6l0-5.2c0.1-3-1.3-4.5-5-4.5c-5.7,0-27.2,1.1-45-18.4c-21.2-23.1-20.3-59.7,4.8-82.7c24.6-22.6,60.7-20.3,82.3,3.3c15,16.3,15.9,35.6,15.4,40.8c-0.1,3,0.2,4.9,3.7,5l7.3,0.6c2.7,0.4,3.2-0.5,3.6-3.3C432.8,67.8,430.8,44.8,412.3,24.6z"></path>
+                    <path class="cueWhiteNoTMSVG0" d="M386.3,66.5h-56.8c-1.6,0-2.9,1.3-2.9,2.9v8.9c0,1.6,1.3,2.9,2.9,2.9h56.8c1.6,0,2.9-1.3,2.9-2.9v-8.9C389.2,67.7,387.9,66.5,386.3,66.5z"></path>
+                </g>
+                <g>
+                    <path class="cueWhiteNoTMSVG0" d="M267.2,3.7c0-1.6-1.3-2.9-2.9-2.9h-9.1c-1.6,0-2.9,1.3-2.9,2.9v80.9c0,0.2,0.1,0.3,0.1,0.5v1.8c0,12.6-4.5,23.4-13.4,32.2c-8.9,8.8-19.7,13.3-32.3,13.5c-12.4-0.2-23.1-4.7-31.9-13.5c-8.8-8.8-13.2-19.6-13.2-32.2V8.3c0,0,0,0,0,0V3.7c0-1.6-1.3-2.9-2.9-2.9h-8.7c-1.6,0-2.9,1.3-2.9,2.9v76.8c0,0,0,0,0,0v6.3c0,16.6,5.8,30.8,17.4,42.6c11.6,11.7,25.8,17.6,42.4,17.6c16.6,0,30.8-5.9,42.6-17.6c11.7-11.7,17.6-25.9,17.6-42.6V6.6h0V3.7z"></path>
+                </g>
+                <g class="cueWhiteNoTMSVG1">
+                    <path class="cueWhiteNoTMSVG2" d="M413.3,1.5v-1h6.9v1h-2.9v7.6h-1.1V1.5H413.3z"></path>
+                    <path class="cueWhiteNoTMSVG2" d="M422.7,0.5l2.7,7.2l2.7-7.2h1.6v8.6h-1.1V1.9h0l-2.7,7.1h-1l-2.7-7.1h0v7.1h-1.1V0.5H422.7z"></path>
+                </g>
+            </svg>
+        </a>
+    </div>
+
+</div>
+
+<script>
+
+function showRecoverPasswordForm() {
+    document.getElementById('recover-password').style.display = 'block';
+    document.getElementById('login').style.display='none';
+}
+
+function hideRecoverPasswordForm() {
+    document.getElementById('recover-password').style.display = 'none';
+    document.getElementById('login').style.display = 'block';
+}
+
+if (window.location.hash == '#recover') { showRecoverPasswordForm() }
+function cueShowSignup(){
+    document.getElementById('cue-show-signup').style.display = 'none';
+    document.getElementById('customer-login').style.display = 'none';
+    document.getElementById('customer-register').style.display = 'block';
+    console.log(this);
+}
+
+function cueShowSignin(){
+    document.getElementById('customer-register').style.display = 'none';
+    document.getElementById('customer-login').style.display = 'block';
+    document.getElementById('cue-show-signup').style.display = 'block';
+}
+
+var pid = <?php echo $place_id; ?>;
+
+(function($) {
+
+    var main_container = $('#cue-magento-forms-container');
+    var faq_container = $('#cue-faq-container');
+    var open_faq = $('#open_faq');
+    var open_learnmore = $('#open_learnmore');
+    var faq_container_iframe = $('#faq_container_iframe');
+    var cue_links = $('#cue_links');
+    var go_back = $('#go_back');
+
+    open_faq.bind('click', function(e){
+        main_container.hide();
+        faq_container.show();
+        go_back.show();
+        cue_links.hide();
+        e.preventDefault();
+    });
+
+    open_learnmore.bind('click', function(e){
+        faq_container_iframe[0].contentWindow.postMessage('openTuto', faq_container_iframe[0].src);
+        main_container.hide();
+        faq_container.show();
+        go_back.show();
+        cue_links.hide();
+        e.preventDefault();
+    });
+    
+    go_back.bind('click', function(e){
+        faq_container_iframe[0].contentWindow.postMessage('closeTuto', faq_container_iframe[0].src);
+        main_container.show();
+        faq_container.hide();
+        go_back.hide();
+        cue_links.show();
+        e.preventDefault();
+    });
+
+    /* GA analytic events */
+
+
+    var retailerName = "<?php echo $origin ?>";
+    var retailerId = "<?php echo $place_id ?>";
+
+
+    document.getElementById('email').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp sign in email input";
+        var eventAction = "cp sign in email input clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+    document.getElementById('pass').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp sign in password input";
+        var eventAction = "cp sign in password input clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+    document.getElementById('send2').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp sign in button";
+        var eventAction = "cp sign in button clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+    document.getElementById('open_learnmore').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp learn more";
+        var eventAction = "cp learn more clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+    document.getElementById('open_faq').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp faq";
+        var eventAction = "cp faq clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+    document.getElementById('email_address').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp sign up email input";
+        var eventAction = "cp sign up email input clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+    document.getElementById('password').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp sign up password input";
+        var eventAction = "cp sign up password input clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+    document.getElementById('firstname').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp sign up first name input";
+        var eventAction = "cp sign up first name input clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+    document.getElementById('lastname').addEventListener('click',function(){
+        // Sends the event to Google Analytics start
+        var eventCategory = "cp sign up last name input";
+        var eventAction = "cp sign up last name input clicked";
+        var eventLabel =  retailerId + " " + retailerName;
+        ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+            hitCallback: function() {}
+        });
+        // Sends the event to Google Analytics end
+    });
+
+
+    // document.getElementById('signupId').addEventListener('click',function(){
+    //     // Sends the event to Google Analytics start
+    //     var eventCategory = "cp sign up button";
+    //     var eventAction = "cp sign up button clicked";
+    //     var eventLabel =  retailerId + " " + retailerName;
+    //     ga('send', 'event', eventCategory, eventAction, eventLabel,  {
+    //         hitCallback: function() {}
+    //     });
+    //     // Sends the event to Google Analytics end
+    // });
+
+})(jQuery);
+
+</script>
+
+
+<!-- END Cue e-List -->
+<?php
+	endif;
+endif; 
+?>
+

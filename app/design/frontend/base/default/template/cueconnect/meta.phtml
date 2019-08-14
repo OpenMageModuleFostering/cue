@@ -1,0 +1,26 @@
+<?php 
+if ($this->isEnabled() && $this->getRetailerId()): 
+    $productInfo = $this->getProductData(); 
+    
+    if ($productInfo):
+?>
+
+<meta property="og:url" content="<?php echo $productInfo['url'] ?>" />
+<meta property="og:title" content="<?php echo $productInfo['name'] ?>" />
+<meta property="og:description" content="<?php echo $productInfo['description'] ?>" />
+<meta property="og:image" content="<?php echo $productInfo['picture'] ?>" />
+<meta property="og:type" content="website" />
+
+<meta name="cue:name" content="<?php echo $productInfo['name'] ?>" />
+<meta name="cue:description" content="<?php echo $productInfo['description'] ?>" />
+<meta name="cue:image_url" content="<?php echo $productInfo['picture'] ?>" />
+<meta name="cue:sku" content="<?php echo $productInfo['sku'] ?>" />
+<meta name="cue:brand" content="<?php echo $productInfo['brand'] ?>" />
+<meta name="cue:url" content="<?php echo $productInfo['url'] ?>" />
+<meta name="cue:price" content="<?php echo $productInfo['price'] ?>" />
+<meta name="cue:currency" content="<?php echo $productInfo['currency'] ?>" />
+<meta name="cue:product_type" content="" />
+<?php 
+    endif; 
+endif;
+?>

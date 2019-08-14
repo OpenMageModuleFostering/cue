@@ -1,7 +1,7 @@
 <?php
 /**
  * CueConnect_Cue
- *
+ * 
  * @category    CueConnect
  * @package     CueConnect_Cue
  * @copyright   Copyright (c) 2015 Cue Connect
@@ -17,7 +17,7 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
     public function _construct() {
         $this->_init('cueconnect/cueconnect');
     }
-
+    
     /**
      * Execute export and put result in message box
      */
@@ -41,17 +41,17 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
             }
         }
     }
-
+    
     /**
      * Execute export if manually asked and put result in message box
      */
-    public static function manualExport() {
+    public static function manualExport() { 
         // Check for demands
         $demand = Mage::getModel('cueconnect/demand');
         $awaiting_demands = Mage::getModel('cueconnect/demand')
                 ->getCollection()
                 ->addFilter('status', $demand::STATUS_WAITING);
-
+        
         if (count($awaiting_demands)) {
             // Update demands
             foreach ($awaiting_demands as $awaiting_demand) {
@@ -59,17 +59,17 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
                 $awaiting_demand->setUpdatedAt(date('Y-m-d H:i:s'));
                 $awaiting_demand->save();
             }
-
+            
             // Execute export() for each stores
             foreach (Mage::app()->getStores() as $store) {
                 if ($store->getConfig('cueconnect/enabled/enabled')) {
                     // Export
                     $result = self::export($store);
-
+                    
                     // Log
                     $log = $result['log'];
                     $log['end_at'] = date('Y-m-d H:i:s');
-
+                    
                     // Notification
                     $inbox = Mage::getModel('adminnotification/inbox');
                     if ($result['success']) {
@@ -79,20 +79,20 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
                         $inbox->addCritical(sprintf("%s products has not been successfully synced with Cue.", $store->getName()), $result['message']);
                         $log['status'] = 'error';
                     }
-
+                    
                     Mage::helper('cueconnect')->logExportProgress(json_encode($log));
                 }
             }
-
+            
             // Update demands
             foreach ($awaiting_demands as $awaiting_demand) {
                 $awaiting_demand->setStatus($demand::STATUS_DONE);
                 $awaiting_demand->setUpdatedAt(date('Y-m-d H:i:s'));
                 $awaiting_demand->save();
-            }
+            }             
         }
     }
-
+    
     /**
      * Export catalog products to Cue
      */
@@ -103,20 +103,20 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
         $log['status'] = "progressing";
         $log['store'] = $store->getName();
         Mage::helper('cueconnect')->logExportProgress(json_encode($log));
-
+        
         // Check if crententials has been filled
         if (!$store->getConfig('cueconnect/credentials/login') || !$store->getConfig('cueconnect/credentials/password')) {
             $message = "Cue credentials are not filled.";
             return array('success' => false, 'message' => $message, 'log' => $log);
         }
-
+        
         // Retailuser WS
         $soap_client = Mage::helper('cueconnect')->getSoapClient(
                 Mage::helper('cueconnect')->getWsUrl('retailuser'),
                 $store->getConfig('cueconnect/credentials/login'),
                 $store->getConfig('cueconnect/credentials/password')
         );
-
+        
         // Get place ID
         $place_id =  null;
         try {
@@ -129,14 +129,14 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
             $message = $e->getMessage();
             return array('success' => false, 'message' => $message, 'log' => $log);
         }
-
+        
         // Product WS
         $soap_client = Mage::helper('cueconnect')->getSoapClient(
                 Mage::helper('cueconnect')->getWsUrl('product'),
                 $store->getConfig('cueconnect/credentials/login'),
                 $store->getConfig('cueconnect/credentials/password')
         );
-
+        
         // Get Cue Catalog
         $cueconnect_products = array();
         $results = $soap_client->get(array('page' => 1, 'pagesize' => 100000, 'clipped' => false));
@@ -145,7 +145,7 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
                 $cueconnect_products[$result->sku] = $result;
             }
         }
-
+        
         // Catalog products
         $catalog_products = Mage::getModel('catalog/product')
                 ->getCollection()
@@ -160,7 +160,7 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
         $updated_data = array();
         foreach ($catalog_products as $catalog_product) {
             $catalog_products_skus[] = $catalog_product->getSku();
-
+            
             // Product image
             $icon = "http://www.cueconnect.com/images/no_image.gif";
             if ($catalog_product->getData('image')) {
@@ -169,7 +169,7 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
 
             // Product URL
             $url = $store->getBaseUrl(Mage_Core_Model_Store::URL_TYPE_LINK).$catalog_product->getUrlPath();
-
+            
             // Check if product exists in Cue database
             if (in_array($catalog_product->getSku(), array_keys($cueconnect_products))) {
                 $updated_data[] = array(
@@ -208,7 +208,7 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
         foreach ($skus_to_delete as $sku_to_delete) {
             $imics_to_delete[] = $cueconnect_products[$sku_to_delete]->product_imic;
         }
-
+        
         // Log
         $log['total_products'] = count($catalog_products);
         $log['total_products_to_create'] = count($new_data);
@@ -218,7 +218,7 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
         $log['total_products_updated'] = 0;
         $log['total_products_deleted'] = 0;
         Mage::helper('cueconnect')->logExportProgress(json_encode($log));
-
+        
         // Send new data data to Cue (per slices)
         if (count($new_data)) {
             $new_data_slices = Mage::helper('cueconnect')->getSlicesFromArray($new_data, 20);
@@ -238,7 +238,7 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
                 }
             }
         }
-
+        
         // Send updated data data to Cue (per slices)
         if (count($updated_data)) {
             $updated_data_slices = Mage::helper('cueconnect')->getSlicesFromArray($updated_data, 20);
@@ -258,7 +258,7 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
                 }
             }
         }
-
+        
         // Delete products which are not in the Magento catalog anymore
         if (count($imics_to_delete)) {
             $imics_to_delete_slices = Mage::helper('cueconnect')->getSlicesFromArray($imics_to_delete, 50);
@@ -278,12 +278,12 @@ class CueConnect_Cue_Model_CueConnect extends Mage_Core_Model_Abstract
                 }
             }
         }
-
+        
         // Log
         $log['end_at'] = date('Y-m-d H:i:s');
         $log['status'] = "done";
         Mage::helper('cueconnect')->logExportProgress(json_encode($log));
-
+        
         // Return
         return array(
             'success' => true,

@@ -29,7 +29,7 @@
                     </fields>
                 </environment>
                 <credentials translate="label">
-                    <label>Cue API Credentials</label>
+                    <label>Cue API Key</label>
                     <comment><![CDATA[<p>Get your Cue API key from your Merchant Hub account under the Code Implementation section.</p>]]></comment>
                     <frontend_type>text</frontend_type>
                     <sort_order>1</sort_order>
@@ -44,27 +44,8 @@
                             <show_in_website>0</show_in_website>
                             <show_in_store>1</show_in_store>
                             <frontend_type>text</frontend_type>
-                            <sort_order>1</sort_order>
-                        </api_key>
-                        <login translate="label">
-                            <label>E-mail</label>
-                            <tooltip>This field is required.</tooltip>
-                            <show_in_default>0</show_in_default>
-                            <show_in_website>0</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>2</sort_order>
-                            <validate>validate-email</validate>
-                        </login>
-                        <password translate="label">
-                            <label>Password</label>
-                            <tooltip>This field is required.</tooltip>
-                            <show_in_default>0</show_in_default>
-                            <show_in_website>0</show_in_website>
-                            <show_in_store>1</show_in_store>
-                            <frontend_type>password</frontend_type>
                             <sort_order>3</sort_order>
-                        </password>
+                        </api_key>
                     </fields>
                 </credentials>
                 <enabled translate="label">
