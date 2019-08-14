@@ -251,6 +251,11 @@ class CueConnect_Cue_Model_Observer
             $width = Mage::getStoreConfig('cueconnect/image/width');
             $height = Mage::getStoreConfig('cueconnect/image/height');
 
+            $image = 'https://www.cueconnect.com/images/no_image.gif';
+            if ($product->getData('small_image') && $product->getData('small_image') !== 'no_selection') {
+                $image = (string)Mage::helper('catalog/image')->init($product, 'small_image')->resize($width, $height);
+            }
+
             $params = array(
                 'id'                    => $product->getId(),
                 'sku'                   => (string)$product->getSku(),
@@ -263,7 +268,7 @@ class CueConnect_Cue_Model_Observer
                 'sms_desc'              => (string)$product->getDescription(),
                 'url'                   => $product->getProductUrl(),
                 'taxonomy_id'           => Mage::getStoreConfig('cueconnect/taxomomy_id'),
-                'image'                 => (string)Mage::helper('catalog/image')->init($product, 'small_image')->resize($width, $height),
+                'image'                 => $image,
                 'price'                 => number_format(Mage::helper('core')->currency($product->getPrice(), false, false), 2),
             );
 
@@ -429,6 +434,11 @@ class CueConnect_Cue_Model_Observer
             $width = Mage::getStoreConfig('cueconnect/image/width');
             $height = Mage::getStoreConfig('cueconnect/image/height');
 
+            $image = 'https://www.cueconnect.com/images/no_image.gif';
+            if ($product->getData('small_image') && $product->getData('small_image') !== 'no_selection') {
+                $image = (string)Mage::helper('catalog/image')->init($product, 'small_image')->resize($width, $height);
+            }
+
             $params = array(
                 // customer
                 'storeId'               => $storeId,
@@ -452,7 +462,7 @@ class CueConnect_Cue_Model_Observer
                 'sms_desc'              => (string)$product->getDescription(),
                 'url'                   => $product->getProductUrl(),
                 'taxonomy_id'           => Mage::getStoreConfig('cueconnect/taxomomy_id'),
-                'image'                 => (string)Mage::helper('catalog/image')->init($product, 'small_image')->resize($width, $height),
+                'image'                 => $image,
                 'live'                  => '1',
                 'price'                 => number_format(Mage::helper('core')->currency($product->getPrice(), false, false), 2),
             );
