@@ -1,16 +1,19 @@
 {
-    "name": "OpenMageModuleFostering/Cue",
+    "name": "OpenMageModuleFostering\/Cue",
     "type": "magento-module",
     "license": "Open-Software-License-(OSL)",
     "homepage": "",
     "description": "Powerful onsite marketing solution that helps increase engagement and conversions.",
     "authors": [
-    {
-        "name": "Cue Connect",
-        "email": "dev@cueconnect.com"
-    }
-],
+        {
+            "name": "Cue Connect",
+            "email": "dev@cueconnect.com"
+        }
+    ],
     "suggest": {
-        "magento-hackathon/magento-composer-installer": "*"
-    }
+        "magento-hackathon\/magento-composer-installer": "*"
+    },
+    "keywords": [
+        "openmage-module"
+    ]
 }
