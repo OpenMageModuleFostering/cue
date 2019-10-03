@@ -1,7 +1,7 @@
 {
-    "name": "OpenMageModuleFostering\/Cue",
+    "name": "openmage-module-fostering\/cue",
     "type": "magento-module",
-    "license": "Open-Software-License-(OSL)",
+    "license": "OSL-3.0",
     "homepage": "",
     "description": "Powerful onsite marketing solution that helps increase engagement and conversions.",
     "authors": [
